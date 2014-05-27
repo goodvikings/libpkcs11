@@ -10,6 +10,10 @@
 #ifndef SESSION_H
 #define	SESSION_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "p11.h"
 
 class session
@@ -30,5 +34,8 @@ private:
 	// will need temporary objects
 };
 
-#endif	/* SESSION_H */
+#ifdef __cplusplus
+}
+#endif
 
+#endif	/* SESSION_H */
