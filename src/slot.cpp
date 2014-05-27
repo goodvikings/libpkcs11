@@ -40,7 +40,7 @@ bool slot::open(const char* filename)
 		rv = t->open(filename);
 	} else
 	{
-		rv =false;
+		rv = false;
 	}
 
 	delete buffer;
@@ -170,6 +170,13 @@ CK_RV slot::logout()
 	return t->logout();
 }
 
+CK_RV slot::initToken(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK_UTF8CHAR_PTR pLabel)
+{
+	if (!isTokenPresent())
+		return CKR_TOKEN_NOT_PRESENT;
+	return t->initToken(pPin, ulPinLen, pLabel);
+}
+
 bool slot::getTokenFlags(CK_FLAGS* flags)
 {
 	if (!isTokenPresent())
@@ -249,4 +256,28 @@ bool slot::isLoggedIn(CK_SESSION_HANDLE hSession)
 		return t->isLoggedIn();
 	else
 		return CKR_SESSION_HANDLE_INVALID;
+}
+
+CK_STATE slot::getTokenState()
+{
+	if (isTokenPresent())
+		return t->getState();
+	else
+		return CKS_RO_PUBLIC_SESSION;
+}
+
+CK_RV slot::initTokenUserPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen)
+{
+	if (isTokenPresent())
+		return t->initUserPin(pPin, ulPinLen);
+	else
+		return CKR_TOKEN_NOT_PRESENT;
+}
+
+CK_RV slot::setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR_PTR pNewPin, CK_ULONG ulNewLen)
+{
+	if (isTokenPresent())
+		return t->setTokenPin(pOldPin, ulOldLen, pNewPin, ulNewLen);
+	else
+		return CKR_TOKEN_NOT_PRESENT;
 }

@@ -22,8 +22,8 @@
 #define TOKENMANIDLEN 32
 #define TOKENMODELLEN 16
 #define TOKENSERIALLEN 16
-#define MAXPINLEN 16
-#define MINPINLEN 0
+#define TOKENMAXPINLEN 16
+#define TOKENMINPINLEN 0
 #define PINNOTINITIALIZED 0
 #define PININITIALIZED 1
 
@@ -33,6 +33,8 @@
 #define MODEL "model"
 #define SERIAL "serial"
 #define FLAGS "flags"
+#define MAXPINLEN "MaxPinLen"
+#define MINPINLEN "MinPinLen"
 #define MAXSESSIONCOUNT "MaxSessionCount"
 #define MAXRWSESSIONCOUNT "MaxRWSessionCount"
 #define TOTALPUBMEM "TotalPubMem"
@@ -40,7 +42,7 @@
 #define HWVERMAJOR "HWVerMajor"
 #define HWVERMINOR "HWVerMinor"
 #define FWVERMAJOR "FWVerMajor"
-#define FWVERINOR "FWVerMinor"
+#define FWVERMINOR "FWVerMinor"
 
 // PIN table
 #define USERPIN "userPin"
@@ -72,11 +74,15 @@ public:
 	bool getFWVerMinor(int* i);
 
 	CK_FLAGS getFlags();
-
+	CK_STATE getState();
+	
 	bool isTokenInitialized();
 	bool isPinInitialized();
 	CK_RV login(CK_SESSION_HANDLE hSession, CK_USER_TYPE userType, const unsigned char* pin, const int pinLen);
 	CK_RV logout();
+	CK_RV initToken(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK_UTF8CHAR_PTR pLabel);
+	CK_RV initUserPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen);
+	CK_RV setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR_PTR pNewPin, CK_ULONG ulNewLen);
 	
 	bool getMaxRetries(int* i);
 	bool getCurrRetries(int* i);
@@ -98,7 +104,10 @@ private:
 	bool getInfoText(unsigned char* buff, unsigned int bufflen, const char* field);
 	bool getInfoInt(int* i, const char* field);
 	CK_SESSION_HANDLE getNextHandle();
-	bool checkPin(const unsigned char* pin, const int pinLen);
+	bool checkPin(const unsigned char* pin, const int pinLen, bool isUser);
+	bool isPinLocked();
+	CK_RV initialize(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK_UTF8CHAR_PTR pLabel);
+	bool setPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, bool isUser);
 };
 
 #endif

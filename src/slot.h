@@ -38,12 +38,16 @@ public:
 	CK_RV logout();
 	bool getTokenFlags(CK_FLAGS* flags);
 	CK_SESSION_HANDLE openSession(CK_FLAGS f);
+	CK_RV initToken(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK_UTF8CHAR_PTR pLabel);
 	void closeSession(CK_SESSION_HANDLE hSession);
 	void closeAllSessions();
 	bool hasSession(CK_SESSION_HANDLE);
 	bool tokenHasRWSOSession();
 	void getSessionInfo(CK_SESSION_HANDLE hSession, CK_SESSION_INFO_PTR pInfo);
 	bool isLoggedIn(CK_SESSION_HANDLE hSession);
+	CK_STATE getTokenState();
+	CK_RV initTokenUserPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen);
+	CK_RV setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR_PTR pNewPin, CK_ULONG ulNewLen);
 private:
 	token* t;
 	CK_SLOT_ID id;

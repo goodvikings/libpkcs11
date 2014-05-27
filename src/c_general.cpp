@@ -122,7 +122,7 @@ CK_RV C_Finalize(CK_VOID_PTR pReserved)
 
 	LOG_RETURNCODE(rv);
 
-	LOG_DESTROY;
+	LOG_DESTROY();
 	
 	return rv;
 }
@@ -177,12 +177,6 @@ CK_RV C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList)
 
 	return rv;
 }
-
-//void initLogger()
-//{
-//	logger* l = new logger(getenv(PKCS11LOGFILEENV));
-//	log = l;
-//}
 
 bool checkArgs(CK_C_INITIALIZE_ARGS_PTR args)
 {

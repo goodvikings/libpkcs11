@@ -19,11 +19,13 @@ extern bool cryptokiInitialized;
 extern std::vector<slot*>* slots;
 extern mechanisms* mechs;
 
+extern int getSlotBySession(CK_SESSION_HANDLE hSession);
+
 CK_RV C_GetSlotList(CK_BBOOL tokenPresent, CK_SLOT_ID_PTR pSlotList, CK_ULONG_PTR pulCount)
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
 	unsigned long slotCount;
 
@@ -69,7 +71,7 @@ CK_RV C_GetSlotList(CK_BBOOL tokenPresent, CK_SLOT_ID_PTR pSlotList, CK_ULONG_PT
 	}
 
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -77,7 +79,7 @@ CK_RV C_GetSlotInfo(CK_SLOT_ID slotID, CK_SLOT_INFO_PTR pInfo)
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
 
 	if (!cryptokiInitialized)
@@ -100,7 +102,7 @@ CK_RV C_GetSlotInfo(CK_SLOT_ID slotID, CK_SLOT_INFO_PTR pInfo)
 	pInfo->firmwareVersion.minor = SLOTVERSIONMINOR;
 
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -124,7 +126,7 @@ CK_RV C_GetTokenInfo(CK_SLOT_ID slotID, CK_TOKEN_INFO_PTR pTokenInfo)
 		rv = (*slots)[slotID]->getTokenInfo(pTokenInfo);
 
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -134,11 +136,11 @@ CK_RV C_WaitForSlotEvent(CK_FLAGS flags, CK_SLOT_ID_PTR pSlot, CK_VOID_PTR pRser
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -168,7 +170,7 @@ CK_RV C_GetMechanismList(CK_SLOT_ID slotID, CK_MECHANISM_TYPE_PTR pMechanismList
 	}
 
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -179,7 +181,7 @@ CK_RV C_GetMechanismInfo(CK_SLOT_ID slotID, CK_MECHANISM_TYPE type, CK_MECHANISM
 
 	CK_RV rv = CKR_OK;
 
-	if (!cryptokiInitialized)
+	if (!rv && !cryptokiInitialized)
 		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 	if (!rv && slotID >= slots->size())
 		rv = CKR_SLOT_ID_INVALID;
@@ -187,14 +189,14 @@ CK_RV C_GetMechanismInfo(CK_SLOT_ID slotID, CK_MECHANISM_TYPE type, CK_MECHANISM
 		rv = CKR_TOKEN_NOT_PRESENT;
 	if (!rv && !pInfo)
 		rv = CKR_ARGUMENTS_BAD;
-	
+
 	if (!rv)
 	{
 		rv = mechs->getMechanismInfo(type, pInfo);
 	}
 
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -204,11 +206,23 @@ CK_RV C_InitToken(CK_SLOT_ID slotID, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slotID >= slots->size())
+		rv = CKR_SLOT_ID_INVALID;
+	if (!rv && !(*slots)[slotID]->isTokenPresent())
+		rv = CKR_TOKEN_NOT_PRESENT;
+	if (!rv && !pPin)
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && !pLabel)
+		rv = CKR_ARGUMENTS_BAD;
+
+	if (!rv)
+		rv = (*slots)[slotID]->initToken(pPin, ulPinLen, pLabel);
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -218,11 +232,22 @@ CK_RV C_InitPIN(CK_SESSION_HANDLE hSession, CK_UTF8CHAR_PTR pPin, CK_ULONG ulPin
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+	int slot = getSlotBySession(hSession);
+
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && !pPin)
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && !((*slots)[slot]->getTokenState() & CKS_RW_SO_FUNCTIONS))
+		rv = CKR_USER_NOT_LOGGED_IN;
+
+	if (!rv)
+		rv = (*slots)[slot]->initTokenUserPin(pPin, ulPinLen);
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -232,11 +257,22 @@ CK_RV C_SetPIN(CK_SESSION_HANDLE hSession, CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulO
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	int slot = getSlotBySession(hSession);
+	CK_STATE state = (*slots)[slot]->getTokenState();
 	
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && (!pOldPin || !pNewPin))
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && (state == CKS_RO_PUBLIC_SESSION || state == CKS_RO_USER_FUNCTIONS))
+		rv = CKR_SESSION_READ_ONLY;
+
+	if (!rv)
+		rv = (*slots)[slot]->setTokenPin(pOldPin, ulOldLen, pNewPin, ulNewLen);
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
-

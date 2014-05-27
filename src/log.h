@@ -15,7 +15,7 @@
 #include "p11.h"
 
 #define LOG_INSTANCE(filename) logger* log = logger::getInstance(filename)
-#define LOG_DESTROY logger::destroy()
+#define LOG_DESTROY() logger::destroy()
 
 #define LOG_EVENT(text) log->log_event(text, __FUNCTION__, __FILE__, __LINE__)
 #define LOG_FUNCTIONCALL() log->log_functionCall(__FUNCTION__, __FILE__, __LINE__)
