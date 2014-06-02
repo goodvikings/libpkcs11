@@ -16,9 +16,9 @@ CK_RV C_SignInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_OBJ
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -30,9 +30,9 @@ CK_RV C_Sign(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData, CK_ULONG ulDataLen, 
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -44,9 +44,9 @@ CK_RV C_SignUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart, CK_ULONG ulPar
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -58,9 +58,9 @@ CK_RV C_SignFinal(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pSignature, CK_ULONG_P
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -72,9 +72,9 @@ CK_RV C_SignRecoverInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -86,9 +86,9 @@ CK_RV C_SignRecover(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData, CK_ULONG ulDa
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -100,9 +100,9 @@ CK_RV C_VerifyInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_O
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -114,9 +114,9 @@ CK_RV C_Verify(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData, CK_ULONG ulDataLen
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -128,9 +128,9 @@ CK_RV C_VerifyUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart, CK_ULONG ulP
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -142,9 +142,9 @@ CK_RV C_VerifyFinal(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pSignature, CK_ULONG
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -156,9 +156,9 @@ CK_RV C_VerifyRecoverInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanis
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -170,9 +170,9 @@ CK_RV C_VerifyRecover(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pSignature, CK_ULO
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;

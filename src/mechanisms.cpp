@@ -27,17 +27,30 @@
 
 mechanisms::mechanisms()
 {
+	secKeyTypes = new CK_KEY_TYPE[4];
+	secKeyTypes[0] = CKK_RC4;
+	secKeyTypes[1] = CKK_DES;
+	secKeyTypes[2] = CKK_DES3;
+	secKeyTypes[3] = CKK_AES;
+	secKeyTypeCount = 4;
+
+	asymKeyTypes = new CK_KEY_TYPE[1];
+	asymKeyTypes[0] = CKK_RSA;
+	asymKeyTypeCount = 1;
+
+	m = new std::map<CK_MECHANISM_TYPE, CK_MECHANISM_INFO_PTR > ();
+
 	//#define CKM_RSA_PKCS_KEY_PAIR_GEN      0x00000000
-	m[CKM_RSA_PKCS_KEY_PAIR_GEN] = new CK_MECHANISM_INFO;
-	m[CKM_RSA_PKCS_KEY_PAIR_GEN]->ulMaxKeySize = RSAMAXKEYSIZE;
-	m[CKM_RSA_PKCS_KEY_PAIR_GEN]->ulMinKeySize = RSAMINKEYSIZE;
-	m[CKM_RSA_PKCS_KEY_PAIR_GEN]->flags = CKF_GENERATE_KEY_PAIR;
+	(*m)[CKM_RSA_PKCS_KEY_PAIR_GEN] = new CK_MECHANISM_INFO;
+	(*m)[CKM_RSA_PKCS_KEY_PAIR_GEN]->ulMaxKeySize = RSAMAXKEYSIZE;
+	(*m)[CKM_RSA_PKCS_KEY_PAIR_GEN]->ulMinKeySize = RSAMINKEYSIZE;
+	(*m)[CKM_RSA_PKCS_KEY_PAIR_GEN]->flags = CKF_GENERATE_KEY_PAIR;
 
 	//#define CKM_RSA_PKCS                   0x00000001
-	m[CKM_RSA_PKCS] = new CK_MECHANISM_INFO;
-	m[CKM_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
-	m[CKM_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
-	m[CKM_RSA_PKCS]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_SIGN | CKF_VERIFY | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_RSA_PKCS] = new CK_MECHANISM_INFO;
+	(*m)[CKM_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
+	(*m)[CKM_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
+	(*m)[CKM_RSA_PKCS]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_SIGN | CKF_VERIFY | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_RSA_9796                   0x00000002
 
@@ -46,26 +59,26 @@ mechanisms::mechanisms()
 	//#define CKM_MD2_RSA_PKCS               0x00000004
 
 	//#define CKM_MD5_RSA_PKCS               0x00000005
-	m[CKM_MD5_RSA_PKCS] = new CK_MECHANISM_INFO;
-	m[CKM_MD5_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
-	m[CKM_MD5_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
-	m[CKM_MD5_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_MD5_RSA_PKCS] = new CK_MECHANISM_INFO;
+	(*m)[CKM_MD5_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
+	(*m)[CKM_MD5_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
+	(*m)[CKM_MD5_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_SHA1_RSA_PKCS              0x00000006
-	m[CKM_SHA1_RSA_PKCS] = new CK_MECHANISM_INFO;
-	m[CKM_SHA1_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
-	m[CKM_SHA1_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
-	m[CKM_SHA1_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_SHA1_RSA_PKCS] = new CK_MECHANISM_INFO;
+	(*m)[CKM_SHA1_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
+	(*m)[CKM_SHA1_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
+	(*m)[CKM_SHA1_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_RIPEMD128_RSA_PKCS         0x00000007
 
 	//#define CKM_RIPEMD160_RSA_PKCS         0x00000008
 
 	//#define CKM_RSA_PKCS_OAEP              0x00000009
-	m[CKM_RSA_PKCS_OAEP] = new CK_MECHANISM_INFO;
-	m[CKM_RSA_PKCS_OAEP]->ulMaxKeySize = RSAMAXKEYSIZE;
-	m[CKM_RSA_PKCS_OAEP]->ulMinKeySize = RSAMINKEYSIZE;
-	m[CKM_RSA_PKCS_OAEP]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_RSA_PKCS_OAEP] = new CK_MECHANISM_INFO;
+	(*m)[CKM_RSA_PKCS_OAEP]->ulMaxKeySize = RSAMAXKEYSIZE;
+	(*m)[CKM_RSA_PKCS_OAEP]->ulMinKeySize = RSAMINKEYSIZE;
+	(*m)[CKM_RSA_PKCS_OAEP]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_RSA_X9_31_KEY_PAIR_GEN     0x0000000A
 
@@ -94,22 +107,22 @@ mechanisms::mechanisms()
 	//#define CKM_X9_42_MQV_DERIVE           0x00000033
 
 	//#define CKM_SHA256_RSA_PKCS            0x00000040
-	m[CKM_SHA256_RSA_PKCS] = new CK_MECHANISM_INFO;
-	m[CKM_SHA256_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
-	m[CKM_SHA256_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
-	m[CKM_SHA256_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_SHA256_RSA_PKCS] = new CK_MECHANISM_INFO;
+	(*m)[CKM_SHA256_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
+	(*m)[CKM_SHA256_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
+	(*m)[CKM_SHA256_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_SHA384_RSA_PKCS            0x00000041
-	m[CKM_SHA384_RSA_PKCS] = new CK_MECHANISM_INFO;
-	m[CKM_SHA384_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
-	m[CKM_SHA384_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
-	m[CKM_SHA384_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_SHA384_RSA_PKCS] = new CK_MECHANISM_INFO;
+	(*m)[CKM_SHA384_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
+	(*m)[CKM_SHA384_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
+	(*m)[CKM_SHA384_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_SHA512_RSA_PKCS            0x00000042
-	m[CKM_SHA512_RSA_PKCS] = new CK_MECHANISM_INFO;
-	m[CKM_SHA512_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
-	m[CKM_SHA512_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
-	m[CKM_SHA512_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_SHA512_RSA_PKCS] = new CK_MECHANISM_INFO;
+	(*m)[CKM_SHA512_RSA_PKCS]->ulMaxKeySize = RSAMAXKEYSIZE;
+	(*m)[CKM_SHA512_RSA_PKCS]->ulMinKeySize = RSAMINKEYSIZE;
+	(*m)[CKM_SHA512_RSA_PKCS]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_SHA256_RSA_PKCS_PSS        0x00000043
 
@@ -134,90 +147,90 @@ mechanisms::mechanisms()
 	//#define CKM_RC2_CBC_PAD                0x00000105
 
 	//#define CKM_RC4_KEY_GEN                0x00000110
-	m[CKM_RC4_KEY_GEN] = new CK_MECHANISM_INFO;
-	m[CKM_RC4_KEY_GEN]->ulMaxKeySize = RC4MAXKEYSIZE;
-	m[CKM_RC4_KEY_GEN]->ulMinKeySize = RC4MINKEYSIZE;
-	m[CKM_RC4_KEY_GEN]->flags = CKF_GENERATE;
+	(*m)[CKM_RC4_KEY_GEN] = new CK_MECHANISM_INFO;
+	(*m)[CKM_RC4_KEY_GEN]->ulMaxKeySize = RC4MAXKEYSIZE;
+	(*m)[CKM_RC4_KEY_GEN]->ulMinKeySize = RC4MINKEYSIZE;
+	(*m)[CKM_RC4_KEY_GEN]->flags = CKF_GENERATE;
 
 	//#define CKM_RC4                        0x00000111
-	m[CKM_RC4] = new CK_MECHANISM_INFO;
-	m[CKM_RC4]->ulMaxKeySize = RC4MAXKEYSIZE;
-	m[CKM_RC4]->ulMinKeySize = RC4MINKEYSIZE;
-	m[CKM_RC4]->flags = CKF_ENCRYPT | CKF_DECRYPT;
+	(*m)[CKM_RC4] = new CK_MECHANISM_INFO;
+	(*m)[CKM_RC4]->ulMaxKeySize = RC4MAXKEYSIZE;
+	(*m)[CKM_RC4]->ulMinKeySize = RC4MINKEYSIZE;
+	(*m)[CKM_RC4]->flags = CKF_ENCRYPT | CKF_DECRYPT;
 
 	//#define CKM_DES_KEY_GEN                0x00000120
-	m[CKM_DES_KEY_GEN] = new CK_MECHANISM_INFO;
-	m[CKM_DES_KEY_GEN]->ulMaxKeySize = DESMAXKEYSIZE;
-	m[CKM_DES_KEY_GEN]->ulMinKeySize = DESMINKEYSIZE;
-	m[CKM_DES_KEY_GEN]->flags = CKF_GENERATE;
+	(*m)[CKM_DES_KEY_GEN] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES_KEY_GEN]->ulMaxKeySize = DESMAXKEYSIZE;
+	(*m)[CKM_DES_KEY_GEN]->ulMinKeySize = DESMINKEYSIZE;
+	(*m)[CKM_DES_KEY_GEN]->flags = CKF_GENERATE;
 
 	//#define CKM_DES_ECB                    0x00000121
-	m[CKM_DES_ECB] = new CK_MECHANISM_INFO;
-	m[CKM_DES_ECB]->ulMaxKeySize = DESMAXKEYSIZE;
-	m[CKM_DES_ECB]->ulMinKeySize = DESMINKEYSIZE;
-	m[CKM_DES_ECB]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_DES_ECB] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES_ECB]->ulMaxKeySize = DESMAXKEYSIZE;
+	(*m)[CKM_DES_ECB]->ulMinKeySize = DESMINKEYSIZE;
+	(*m)[CKM_DES_ECB]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_DES_CBC                    0x00000122
-	m[CKM_DES_CBC] = new CK_MECHANISM_INFO;
-	m[CKM_DES_CBC]->ulMaxKeySize = DESMAXKEYSIZE;
-	m[CKM_DES_CBC]->ulMinKeySize = DESMINKEYSIZE;
-	m[CKM_DES_CBC]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_DES_CBC] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES_CBC]->ulMaxKeySize = DESMAXKEYSIZE;
+	(*m)[CKM_DES_CBC]->ulMinKeySize = DESMINKEYSIZE;
+	(*m)[CKM_DES_CBC]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_DES_MAC                    0x00000123
-	m[CKM_DES_MAC] = new CK_MECHANISM_INFO;
-	m[CKM_DES_MAC]->ulMaxKeySize = DESMAXKEYSIZE;
-	m[CKM_DES_MAC]->ulMinKeySize = DESMINKEYSIZE;
-	m[CKM_DES_MAC]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_DES_MAC] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES_MAC]->ulMaxKeySize = DESMAXKEYSIZE;
+	(*m)[CKM_DES_MAC]->ulMinKeySize = DESMINKEYSIZE;
+	(*m)[CKM_DES_MAC]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_DES_MAC_GENERAL            0x00000124
-	m[CKM_DES_MAC_GENERAL] = new CK_MECHANISM_INFO;
-	m[CKM_DES_MAC_GENERAL]->ulMaxKeySize = DESMAXKEYSIZE;
-	m[CKM_DES_MAC_GENERAL]->ulMinKeySize = DESMINKEYSIZE;
-	m[CKM_DES_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_DES_MAC_GENERAL] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES_MAC_GENERAL]->ulMaxKeySize = DESMAXKEYSIZE;
+	(*m)[CKM_DES_MAC_GENERAL]->ulMinKeySize = DESMINKEYSIZE;
+	(*m)[CKM_DES_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_DES_CBC_PAD                0x00000125
-	m[CKM_DES_CBC_PAD] = new CK_MECHANISM_INFO;
-	m[CKM_DES_CBC_PAD]->ulMaxKeySize = DESMAXKEYSIZE;
-	m[CKM_DES_CBC_PAD]->ulMinKeySize = DESMINKEYSIZE;
-	m[CKM_DES_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_DES_CBC_PAD] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES_CBC_PAD]->ulMaxKeySize = DESMAXKEYSIZE;
+	(*m)[CKM_DES_CBC_PAD]->ulMinKeySize = DESMINKEYSIZE;
+	(*m)[CKM_DES_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_DES2_KEY_GEN               0x00000130
 
 	//#define CKM_DES3_KEY_GEN               0x00000131
-	m[CKM_DES3_KEY_GEN] = new CK_MECHANISM_INFO;
-	m[CKM_DES3_KEY_GEN]->ulMaxKeySize = DES3MAXKEYSIZE;
-	m[CKM_DES3_KEY_GEN]->ulMinKeySize = DES3MINKEYSIZE;
-	m[CKM_DES3_KEY_GEN]->flags = CKF_GENERATE;
+	(*m)[CKM_DES3_KEY_GEN] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES3_KEY_GEN]->ulMaxKeySize = DES3MAXKEYSIZE;
+	(*m)[CKM_DES3_KEY_GEN]->ulMinKeySize = DES3MINKEYSIZE;
+	(*m)[CKM_DES3_KEY_GEN]->flags = CKF_GENERATE;
 
 	//#define CKM_DES3_ECB                   0x00000132
-	m[CKM_DES3_ECB] = new CK_MECHANISM_INFO;
-	m[CKM_DES3_ECB]->ulMaxKeySize = DES3MAXKEYSIZE;
-	m[CKM_DES3_ECB]->ulMinKeySize = DES3MINKEYSIZE;
-	m[CKM_DES3_ECB]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_DES3_ECB] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES3_ECB]->ulMaxKeySize = DES3MAXKEYSIZE;
+	(*m)[CKM_DES3_ECB]->ulMinKeySize = DES3MINKEYSIZE;
+	(*m)[CKM_DES3_ECB]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_DES3_CBC                   0x00000133
-	m[CKM_DES3_CBC] = new CK_MECHANISM_INFO;
-	m[CKM_DES3_CBC]->ulMaxKeySize = DES3MAXKEYSIZE;
-	m[CKM_DES3_CBC]->ulMinKeySize = DES3MINKEYSIZE;
-	m[CKM_DES3_CBC]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_DES3_CBC] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES3_CBC]->ulMaxKeySize = DES3MAXKEYSIZE;
+	(*m)[CKM_DES3_CBC]->ulMinKeySize = DES3MINKEYSIZE;
+	(*m)[CKM_DES3_CBC]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_DES3_MAC                   0x00000134
-	m[CKM_DES3_MAC] = new CK_MECHANISM_INFO;
-	m[CKM_DES3_MAC]->ulMaxKeySize = DES3MAXKEYSIZE;
-	m[CKM_DES3_MAC]->ulMinKeySize = DES3MAXKEYSIZE;
-	m[CKM_DES3_MAC]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_DES3_MAC] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES3_MAC]->ulMaxKeySize = DES3MAXKEYSIZE;
+	(*m)[CKM_DES3_MAC]->ulMinKeySize = DES3MAXKEYSIZE;
+	(*m)[CKM_DES3_MAC]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_DES3_MAC_GENERAL           0x00000135
-	m[CKM_DES3_MAC_GENERAL] = new CK_MECHANISM_INFO;
-	m[CKM_DES3_MAC_GENERAL]->ulMaxKeySize = DES3MAXKEYSIZE;
-	m[CKM_DES3_MAC_GENERAL]->ulMinKeySize = DES3MAXKEYSIZE;
-	m[CKM_DES3_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_DES3_MAC_GENERAL] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES3_MAC_GENERAL]->ulMaxKeySize = DES3MAXKEYSIZE;
+	(*m)[CKM_DES3_MAC_GENERAL]->ulMinKeySize = DES3MAXKEYSIZE;
+	(*m)[CKM_DES3_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_DES3_CBC_PAD               0x00000136
-	m[CKM_DES3_CBC_PAD] = new CK_MECHANISM_INFO;
-	m[CKM_DES3_CBC_PAD]->ulMaxKeySize = DES3MAXKEYSIZE;
-	m[CKM_DES3_CBC_PAD]->ulMinKeySize = DES3MINKEYSIZE;
-	m[CKM_DES3_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_DES3_CBC_PAD] = new CK_MECHANISM_INFO;
+	(*m)[CKM_DES3_CBC_PAD]->ulMaxKeySize = DES3MAXKEYSIZE;
+	(*m)[CKM_DES3_CBC_PAD]->ulMinKeySize = DES3MINKEYSIZE;
+	(*m)[CKM_DES3_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_CDMF_KEY_GEN               0x00000140
 
@@ -246,16 +259,16 @@ mechanisms::mechanisms()
 	//#define CKM_MD2_HMAC_GENERAL           0x00000202
 
 	//#define CKM_MD5                        0x00000210
-	m[CKM_MD5] = new CK_MECHANISM_INFO;
-	m[CKM_MD5]->flags = CKF_DIGEST;
+	(*m)[CKM_MD5] = new CK_MECHANISM_INFO;
+	(*m)[CKM_MD5]->flags = CKF_DIGEST;
 
 	//#define CKM_MD5_HMAC                   0x00000211
 
 	//#define CKM_MD5_HMAC_GENERAL           0x00000212
 
 	//#define CKM_SHA_1                      0x00000220
-	m[CKM_SHA_1] = new CK_MECHANISM_INFO;
-	m[CKM_SHA_1]->flags = CKF_DIGEST;
+	(*m)[CKM_SHA_1] = new CK_MECHANISM_INFO;
+	(*m)[CKM_SHA_1]->flags = CKF_DIGEST;
 
 	//#define CKM_SHA_1_HMAC                 0x00000221
 
@@ -268,14 +281,16 @@ mechanisms::mechanisms()
 	//#define CKM_RIPEMD128_HMAC_GENERAL     0x00000232
 
 	//#define CKM_RIPEMD160                  0x00000240
+	(*m)[CKM_RIPEMD160] = new CK_MECHANISM_INFO;
+	(*m)[CKM_RIPEMD160]->flags = CKF_DIGEST;
 
 	//#define CKM_RIPEMD160_HMAC             0x00000241
 
 	//#define CKM_RIPEMD160_HMAC_GENERAL     0x00000242
 
 	//#define CKM_SHA256                     0x00000250
-	m[CKM_SHA256] = new CK_MECHANISM_INFO;
-	m[CKM_SHA256]->flags = CKF_DIGEST;
+	(*m)[CKM_SHA256] = new CK_MECHANISM_INFO;
+	(*m)[CKM_SHA256]->flags = CKF_DIGEST;
 
 	//#define CKM_SHA256_HMAC                0x00000251
 
@@ -288,16 +303,16 @@ mechanisms::mechanisms()
 	//#define CKM_SHA224_HMAC_GENERAL        0x00000257
 
 	//#define CKM_SHA384                     0x00000260
-	m[CKM_SHA384] = new CK_MECHANISM_INFO;
-	m[CKM_SHA384]->flags = CKF_DIGEST;
+	(*m)[CKM_SHA384] = new CK_MECHANISM_INFO;
+	(*m)[CKM_SHA384]->flags = CKF_DIGEST;
 
 	//#define CKM_SHA384_HMAC                0x00000261
 
 	//#define CKM_SHA384_HMAC_GENERAL        0x00000262
 
 	//#define CKM_SHA512                     0x00000270
-	m[CKM_SHA512] = new CK_MECHANISM_INFO;
-	m[CKM_SHA512]->flags = CKF_DIGEST;
+	(*m)[CKM_SHA512] = new CK_MECHANISM_INFO;
+	(*m)[CKM_SHA512]->flags = CKF_DIGEST;
 
 	//#define CKM_SHA512_HMAC                0x00000271
 
@@ -596,46 +611,46 @@ mechanisms::mechanisms()
 	//#define CKM_FASTHASH                   0x00001070
 
 	//#define CKM_AES_KEY_GEN                0x00001080
-	m[CKM_AES_KEY_GEN] = new CK_MECHANISM_INFO;
-	m[CKM_AES_KEY_GEN]->ulMaxKeySize = AESMAXKEYSIZE;
-	m[CKM_AES_KEY_GEN]->ulMinKeySize = AESMINKEYSIZE;
-	m[CKM_AES_KEY_GEN]->flags = CKF_GENERATE;
+	(*m)[CKM_AES_KEY_GEN] = new CK_MECHANISM_INFO;
+	(*m)[CKM_AES_KEY_GEN]->ulMaxKeySize = AESMAXKEYSIZE;
+	(*m)[CKM_AES_KEY_GEN]->ulMinKeySize = AESMINKEYSIZE;
+	(*m)[CKM_AES_KEY_GEN]->flags = CKF_GENERATE;
 
 	//#define CKM_AES_ECB                    0x00001081
-	m[CKM_AES_ECB] = new CK_MECHANISM_INFO;
-	m[CKM_AES_ECB]->ulMaxKeySize = AESMAXKEYSIZE;
-	m[CKM_AES_ECB]->ulMinKeySize = AESMINKEYSIZE;
-	m[CKM_AES_ECB]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_AES_ECB] = new CK_MECHANISM_INFO;
+	(*m)[CKM_AES_ECB]->ulMaxKeySize = AESMAXKEYSIZE;
+	(*m)[CKM_AES_ECB]->ulMinKeySize = AESMINKEYSIZE;
+	(*m)[CKM_AES_ECB]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_AES_CBC                    0x00001082
-	m[CKM_AES_CBC] = new CK_MECHANISM_INFO;
-	m[CKM_AES_CBC]->ulMaxKeySize = AESMAXKEYSIZE;
-	m[CKM_AES_CBC]->ulMinKeySize = AESMINKEYSIZE;
-	m[CKM_AES_CBC]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_AES_CBC] = new CK_MECHANISM_INFO;
+	(*m)[CKM_AES_CBC]->ulMaxKeySize = AESMAXKEYSIZE;
+	(*m)[CKM_AES_CBC]->ulMinKeySize = AESMINKEYSIZE;
+	(*m)[CKM_AES_CBC]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_AES_MAC                    0x00001083
-	m[CKM_AES_MAC] = new CK_MECHANISM_INFO;
-	m[CKM_AES_MAC]->ulMaxKeySize = AESMAXKEYSIZE;
-	m[CKM_AES_MAC]->ulMinKeySize = AESMINKEYSIZE;
-	m[CKM_AES_MAC]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_AES_MAC] = new CK_MECHANISM_INFO;
+	(*m)[CKM_AES_MAC]->ulMaxKeySize = AESMAXKEYSIZE;
+	(*m)[CKM_AES_MAC]->ulMinKeySize = AESMINKEYSIZE;
+	(*m)[CKM_AES_MAC]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_AES_MAC_GENERAL            0x00001084
-	m[CKM_AES_MAC_GENERAL] = new CK_MECHANISM_INFO;
-	m[CKM_AES_MAC_GENERAL]->ulMaxKeySize = AESMAXKEYSIZE;
-	m[CKM_AES_MAC_GENERAL]->ulMinKeySize = AESMINKEYSIZE;
-	m[CKM_AES_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
+	(*m)[CKM_AES_MAC_GENERAL] = new CK_MECHANISM_INFO;
+	(*m)[CKM_AES_MAC_GENERAL]->ulMaxKeySize = AESMAXKEYSIZE;
+	(*m)[CKM_AES_MAC_GENERAL]->ulMinKeySize = AESMINKEYSIZE;
+	(*m)[CKM_AES_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_AES_CBC_PAD                0x00001085
-	m[CKM_AES_CBC_PAD] = new CK_MECHANISM_INFO;
-	m[CKM_AES_CBC_PAD]->ulMaxKeySize = AESMAXKEYSIZE;
-	m[CKM_AES_CBC_PAD]->ulMinKeySize = AESMINKEYSIZE;
-	m[CKM_AES_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_AES_CBC_PAD] = new CK_MECHANISM_INFO;
+	(*m)[CKM_AES_CBC_PAD]->ulMaxKeySize = AESMAXKEYSIZE;
+	(*m)[CKM_AES_CBC_PAD]->ulMinKeySize = AESMINKEYSIZE;
+	(*m)[CKM_AES_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_AES_CTR                    0x00001086
-	m[CKM_AES_CTR] = new CK_MECHANISM_INFO;
-	m[CKM_AES_CTR]->ulMaxKeySize = AESMAXKEYSIZE;
-	m[CKM_AES_CTR]->ulMinKeySize = AESMINKEYSIZE;
-	m[CKM_AES_CTR]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
+	(*m)[CKM_AES_CTR] = new CK_MECHANISM_INFO;
+	(*m)[CKM_AES_CTR]->ulMaxKeySize = AESMAXKEYSIZE;
+	(*m)[CKM_AES_CTR]->ulMinKeySize = AESMINKEYSIZE;
+	(*m)[CKM_AES_CTR]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_BLOWFISH_KEY_GEN           0x00001090
 
@@ -669,24 +684,28 @@ mechanisms::mechanisms()
 
 mechanisms::~mechanisms()
 {
-	for (std::map<CK_MECHANISM_TYPE, CK_MECHANISM_INFO_PTR>::iterator i = m.begin(); i != m.end(); i++)
+	for (std::map<CK_MECHANISM_TYPE, CK_MECHANISM_INFO_PTR>::iterator i = m->begin(); i != m->end(); i++)
 	{
 		delete i->second;
 	}
+
+	delete m;
+	delete [] secKeyTypes;
+	delete [] asymKeyTypes;
 }
 
 CK_ULONG mechanisms::getSize()
 {
-	return m.size();
+	return m->size();
 }
 
 CK_RV mechanisms::getMachanismList(CK_MECHANISM_TYPE_PTR pType, CK_ULONG_PTR pCount)
 {
-	if (m.size() > *pCount)
+	if (m->size() > *pCount)
 		return CKR_BUFFER_TOO_SMALL;
 
 	int j = 0;
-	for (std::map<CK_MECHANISM_TYPE, CK_MECHANISM_INFO_PTR>::iterator i = m.begin(); i != m.end(); i++, j++)
+	for (std::map<CK_MECHANISM_TYPE, CK_MECHANISM_INFO_PTR>::iterator i = m->begin(); i != m->end(); i++, j++)
 	{
 		pType[j] = i->first;
 	}
@@ -697,12 +716,61 @@ CK_RV mechanisms::getMachanismList(CK_MECHANISM_TYPE_PTR pType, CK_ULONG_PTR pCo
 CK_RV mechanisms::getMechanismInfo(CK_MECHANISM_TYPE type, CK_MECHANISM_INFO_PTR pInfo)
 {
 	CK_RV rv = CKR_OK;
-	
-	if (!m.count(type))
+
+	if (!m->count(type))
 		rv = CKR_MECHANISM_INVALID;
-	
+
 	if (!rv)
-		memcpy(pInfo, m[type], sizeof(CK_MECHANISM_INFO));
-	
+		memcpy(pInfo, (*m)[type], sizeof (CK_MECHANISM_INFO));
+
 	return rv;
+}
+
+bool mechanisms::isSupportedSecretKeyType(CK_KEY_TYPE keyType)
+{
+	for (int i = 0; i < secKeyTypeCount; i++)
+		if (keyType == secKeyTypes[i])
+			return true;
+
+	return false;
+}
+
+void mechanisms::getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_PTR* mechs, int* len)
+{
+	switch (keyType) {
+	case CKK_DES:
+		*len = 5;
+		*mechs = new CK_MECHANISM_TYPE[*len];
+		(*mechs)[0] = CKM_DES_ECB;
+		(*mechs)[1] = CKM_DES_CBC;
+		(*mechs)[2] = CKM_DES_MAC;
+		(*mechs)[3] = CKM_DES_MAC_GENERAL;
+		(*mechs)[4] = CKM_DES_CBC_PAD;
+		break;
+	case CKK_RC4:
+		*len = 1;
+		*mechs = new CK_MECHANISM_TYPE[*len];
+		(*mechs)[0] = CKM_RC4;
+		break;
+	case CKK_DES3:
+		*len = 5;
+		*mechs = new CK_MECHANISM_TYPE[*len];
+		(*mechs)[0] = CKM_DES3_ECB;
+		(*mechs)[1] = CKM_DES3_CBC;
+		(*mechs)[2] = CKM_DES3_MAC;
+		(*mechs)[3] = CKM_DES3_MAC_GENERAL;
+		(*mechs)[4] = CKM_DES3_CBC_PAD;
+		break;
+	case CKK_AES:
+		*len = 7;
+		*mechs = new CK_MECHANISM_TYPE[*len];
+		(*mechs)[0] = CKM_AES_KEY_GEN;
+		(*mechs)[1] = CKM_AES_ECB;
+		(*mechs)[2] = CKM_AES_CBC;
+		(*mechs)[3] = CKM_AES_MAC;
+		(*mechs)[4] = CKM_AES_MAC_GENERAL;
+		(*mechs)[5] = CKM_AES_CBC_PAD;
+		(*mechs)[6] = CKM_AES_CTR;
+		break;
+	}
 }

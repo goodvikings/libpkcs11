@@ -14,13 +14,13 @@ CK_RV C_DigestEncryptUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart, CK_UL
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -28,13 +28,13 @@ CK_RV C_DecryptDigestUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pEncryptedPa
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -42,13 +42,13 @@ CK_RV C_SignEncryptUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart, CK_ULON
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -56,13 +56,13 @@ CK_RV C_DecryptVerifyUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pEncryptedPa
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 

@@ -14,13 +14,13 @@ CK_RV C_GetFunctionStatus(CK_SESSION_HANDLE hSession)
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -30,11 +30,11 @@ CK_RV C_CancelFunction(CK_SESSION_HANDLE hSession)
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 

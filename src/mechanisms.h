@@ -22,8 +22,14 @@ public:
 	CK_ULONG getSize();
 	CK_RV getMachanismList(CK_MECHANISM_TYPE_PTR pType, CK_ULONG_PTR pCount);
 	CK_RV getMechanismInfo(CK_MECHANISM_TYPE type, CK_MECHANISM_INFO_PTR pInfo);
+	bool isSupportedSecretKeyType(CK_KEY_TYPE keyType);
+	void getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_PTR* mechs, int* len);
 private:
-	std::map<CK_MECHANISM_TYPE, CK_MECHANISM_INFO_PTR> m;
+	std::map<CK_MECHANISM_TYPE, CK_MECHANISM_INFO_PTR>* m;
+	CK_KEY_TYPE* secKeyTypes;
+	CK_KEY_TYPE* asymKeyTypes;
+	int secKeyTypeCount;
+	int asymKeyTypeCount;
 };
 
 #endif	/* MECHANISMS_H */

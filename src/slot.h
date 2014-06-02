@@ -48,6 +48,8 @@ public:
 	CK_STATE getTokenState();
 	CK_RV initTokenUserPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen);
 	CK_RV setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR_PTR pNewPin, CK_ULONG ulNewLen);
+
+	CK_RV generateKey(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey);
 private:
 	token* t;
 	CK_SLOT_ID id;

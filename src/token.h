@@ -75,7 +75,7 @@ public:
 
 	CK_FLAGS getFlags();
 	CK_STATE getState();
-	
+
 	bool isTokenInitialized();
 	bool isPinInitialized();
 	CK_RV login(CK_SESSION_HANDLE hSession, CK_USER_TYPE userType, const unsigned char* pin, const int pinLen);
@@ -83,16 +83,19 @@ public:
 	CK_RV initToken(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK_UTF8CHAR_PTR pLabel);
 	CK_RV initUserPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen);
 	CK_RV setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR_PTR pNewPin, CK_ULONG ulNewLen);
-	
+
 	bool getMaxRetries(int* i);
 	bool getCurrRetries(int* i);
-	
+
 	bool hasRWSOSession();
 	CK_SESSION_HANDLE openSession(CK_SLOT_ID slotID, CK_FLAGS f);
 	void getSessionInfo(CK_SESSION_HANDLE hSession, CK_SESSION_INFO_PTR pInfo);
 	void closeSession(CK_SESSION_HANDLE hSession);
 	void closeAllSessions();
 	bool isLoggedIn();
+
+	CK_RV generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey);
+
 private:
 	sqlite3 *db;
 	char* filename;
@@ -103,11 +106,17 @@ private:
 
 	bool getInfoText(unsigned char* buff, unsigned int bufflen, const char* field);
 	bool getInfoInt(int* i, const char* field);
-	CK_SESSION_HANDLE getNextHandle();
+	CK_SESSION_HANDLE getNextSessionHandle();
 	bool checkPin(const unsigned char* pin, const int pinLen, bool isUser);
 	bool isPinLocked();
 	CK_RV initialize(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK_UTF8CHAR_PTR pLabel);
 	bool setPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, bool isUser);
+	void removeSessionObjects(CK_SESSION_HANDLE hSession);
+	int getNextObjectHandle();
+	
+	bool saveObjectTemplate(const CK_ATTRIBUTE_PTR pTemplate, const CK_ULONG ulCount, const int handle);
+	
+	bool saveKey(const unsigned char* key, const int len, CK_SESSION_HANDLE pSession, const int handle);
 };
 
 #endif

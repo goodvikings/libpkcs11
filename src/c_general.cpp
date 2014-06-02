@@ -34,7 +34,7 @@ CK_RV C_Initialize(CK_VOID_PTR pInitArgs)
 {
 	LOG_INSTANCE(getenv(PKCS11LOGFILEENV));
 	LOG_FUNCTIONCALL();
-	
+
 	CK_C_INITIALIZE_ARGS_PTR args = (CK_C_INITIALIZE_ARGS_PTR) pInitArgs;
 	CK_C_INITIALIZE_ARGS_PTR foo = NULL_PTR;
 	CK_RV rv = CKR_OK;
@@ -115,7 +115,10 @@ CK_RV C_Finalize(CK_VOID_PTR pReserved)
 		if (slots)
 		{
 			for (unsigned int i = 0; i < slots->size(); i++)
+			{
+				(*slots)[i]->closeAllSessions();
 				delete (*slots)[i];
+			}
 			delete slots;
 		}
 	}
@@ -123,7 +126,7 @@ CK_RV C_Finalize(CK_VOID_PTR pReserved)
 	LOG_RETURNCODE(rv);
 
 	LOG_DESTROY();
-	
+
 	return rv;
 }
 
@@ -159,7 +162,7 @@ CK_RV C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList)
 {
 	LOG_INSTANCE(getenv(PKCS11LOGFILEENV));
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
 
 	if (!rv && !ppFunctionList)

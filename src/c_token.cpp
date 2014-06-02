@@ -259,7 +259,7 @@ CK_RV C_SetPIN(CK_SESSION_HANDLE hSession, CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulO
 	CK_RV rv = CKR_OK;
 	int slot = getSlotBySession(hSession);
 	CK_STATE state = (*slots)[slot]->getTokenState();
-	
+
 	if (!rv && !cryptokiInitialized)
 		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
 	if (!rv && slot == -1)

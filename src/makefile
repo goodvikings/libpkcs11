@@ -33,7 +33,7 @@ $(BUILD)/c_rand.o:	c_rand.cpp log.h p11.h slot.h
 	$(CC) c_rand.cpp $(CCFLAGS) -o $(BUILD)/c_rand.o
 $(BUILD)/token.o:	token.cpp p11.h session.h token.h
 	$(CC) token.cpp $(CCFLAGS) -o $(BUILD)/token.o
-$(BUILD)/c_md.o:	c_md.cpp log.h p11.h
+$(BUILD)/c_md.o:	c_md.cpp log.h mechanisms.h p11.h slot.h
 	$(CC) c_md.cpp $(CCFLAGS) -o $(BUILD)/c_md.o
 $(BUILD)/c_sign.o:	c_sign.cpp log.h p11.h
 	$(CC) c_sign.cpp $(CCFLAGS) -o $(BUILD)/c_sign.o
@@ -43,7 +43,7 @@ $(BUILD)/mutex.o:	mutex.cpp p11.h mutex.h
 	$(CC) mutex.cpp $(CCFLAGS) -o $(BUILD)/mutex.o
 $(BUILD)/c_encrypt.o:	c_encrypt.cpp log.h p11.h
 	$(CC) c_encrypt.cpp $(CCFLAGS) -o $(BUILD)/c_encrypt.o
-$(BUILD)/c_key.o:	c_key.cpp log.h p11.h
+$(BUILD)/c_key.o:	c_key.cpp log.h mechanisms.h p11.h slot.h
 	$(CC) c_key.cpp $(CCFLAGS) -o $(BUILD)/c_key.o
 $(BUILD)/prog.o:	prog.cpp p11.h
 	$(CC) prog.cpp $(CCFLAGS) -o $(BUILD)/prog.o

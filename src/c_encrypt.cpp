@@ -14,13 +14,13 @@ CK_RV C_EncryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -28,13 +28,13 @@ CK_RV C_Encrypt(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData, CK_ULONG ulDataLe
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -42,13 +42,13 @@ CK_RV C_EncryptUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart, CK_ULONG ul
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -56,13 +56,13 @@ CK_RV C_EncryptFinal(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pLastEncryptedPart,
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -70,13 +70,13 @@ CK_RV C_DecryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -84,13 +84,13 @@ CK_RV C_Decrypt(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pEncryptedData, CK_ULONG
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -98,13 +98,13 @@ CK_RV C_DecryptUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pEncryptedPart, CK
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 
@@ -112,13 +112,13 @@ CK_RV C_DecryptFinal(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pLastPart, CK_ULONG
 {
 	LOG_INSTANCE(NULL);
 	LOG_FUNCTIONCALL();
-	
+
 	CK_RV rv = CKR_OK;
-	
+
 	rv = CKR_FUNCTION_NOT_SUPPORTED;
-	
+
 	LOG_RETURNCODE(rv);
-	
+
 	return rv;
 }
 

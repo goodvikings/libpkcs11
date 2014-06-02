@@ -281,3 +281,11 @@ CK_RV slot::setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR_
 	else
 		return CKR_TOKEN_NOT_PRESENT;
 }
+
+CK_RV slot::generateKey(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey)
+{
+	if (isTokenPresent())
+		return t->generateKey(hSession, pTemplate, ulCount, phKey);
+	else
+		return CKR_TOKEN_NOT_PRESENT;
+}

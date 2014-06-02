@@ -7,13 +7,11 @@
  * ------------------------------------------------------------------------------
  */
 
-#include <sqlite3.h>
-#include <string.h>
-#include <map>
-#include <iosfwd>
-#include <iomanip>
-#include <ios>
+#include <cstring>
 #include <fstream>
+#include <map>
+#include <sqlite3.h>
+#include <iostream>
 #include "p11.h"
 #include "session.h"
 #include "token.h"
@@ -360,7 +358,7 @@ bool token::hasRWSOSession()
 
 CK_SESSION_HANDLE token::openSession(CK_SLOT_ID slotID, CK_FLAGS f)
 {
-	CK_SESSION_HANDLE handle = getNextHandle();
+	CK_SESSION_HANDLE handle = getNextSessionHandle();
 
 	session* s = new session(handle, slotID);
 	(*sessions)[handle] = s;
@@ -368,7 +366,7 @@ CK_SESSION_HANDLE token::openSession(CK_SLOT_ID slotID, CK_FLAGS f)
 	f & CKF_RW_SESSION ? s->setRW() : s->setRO();
 
 	state = f & CKF_RW_SESSION ? CKS_RW_PUBLIC_SESSION : CKS_RO_PUBLIC_SESSION;
-	
+
 	return handle;
 }
 
@@ -379,6 +377,8 @@ void token::getSessionInfo(CK_SESSION_HANDLE hSession, CK_SESSION_INFO_PTR pInfo
 
 void token::closeSession(CK_SESSION_HANDLE hSession)
 {
+	removeSessionObjects(hSession);
+
 	delete (*sessions)[hSession];
 	(*sessions)[hSession] = NULL;
 }
@@ -387,13 +387,40 @@ void token::closeAllSessions()
 {
 	for (std::map<CK_SESSION_HANDLE, session*>::iterator i = sessions->begin(); i != sessions->end(); i++)
 	{
-		delete i->second;
+		closeSession(i->first);
 	}
 
 	sessions->clear();
 }
 
-CK_SESSION_HANDLE token::getNextHandle()
+void token::removeSessionObjects(CK_SESSION_HANDLE hSession)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+	const char* query = "delete from objectAttributes where handle in (select handle from objects where session=?);"
+			"delete from objects where session=?;";
+	const char** queryPtr = &query;
+
+	rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hSession);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+		sqlite3_finalize(stmt);
+
+	if (rc == SQLITE_DONE)
+		rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hSession);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+		sqlite3_finalize(stmt);
+}
+
+CK_SESSION_HANDLE token::getNextSessionHandle()
 {
 	for (std::map<CK_SESSION_HANDLE, session*>::iterator i = sessions->begin(); i != sessions->end(); i++)
 	{
@@ -474,6 +501,10 @@ CK_RV token::initialize(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK_UTF8CHAR_PTR
 			"delete from info;"
 			"CREATE TABLE if not exists pin (name varchar(32) NOT NULL, value varchar(32) NOT NULL );"
 			"delete from pin;"
+			"CREATE TABLE if not exists objects (handle int NOT NULL, type int NOT NULL, session int, data blob, PRIMARY KEY (handle));"
+			"delete from objects;"
+			"CREATE TABLE if not exists objectAttributes (handle int NOT NULL, type int NOT NULL, data blob, FOREIGN KEY (handle) REFERENCES objects(handle));"
+			"delete from objectAttributes;"
 			"insert into info(name, value) values "
 			"(?,?)," // label, 1, 2
 			"(?,'Ramo')," // manid 3
@@ -499,6 +530,38 @@ CK_RV token::initialize(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, CK_UTF8CHAR_PTR
 	const char** queryPtr = &query;
 
 	rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+	{
+		sqlite3_finalize(stmt);
+		rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+	}
+
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+	{
+		sqlite3_finalize(stmt);
+		rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+	}
+
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+	{
+		sqlite3_finalize(stmt);
+		rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+	}
+
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+	{
+		sqlite3_finalize(stmt);
+		rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+	}
 
 	if (!rc)
 		rc = sqlite3_step(stmt);
@@ -684,15 +747,132 @@ CK_RV token::setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR
 			}
 		}
 	}
-	
+
 	if (!rv && isPinLocked())
 		rv = CKR_PIN_LOCKED;
 	if (!rv && !checkPin(pOldPin, ulOldLen, isUser))
 		rv = CKR_PIN_INCORRECT;
-	
+
 	if (!rv)
-		if(!setPin(pNewPin, ulNewLen, isUser))
+		if (!setPin(pNewPin, ulNewLen, isUser))
 			rv = CKR_DEVICE_ERROR;
-	
+
 	return rv;
+}
+
+int token::getNextObjectHandle()
+{
+	sqlite3_stmt *stmt = NULL;
+	int rc = 0;
+	int val = -1;
+
+	if (!rc)
+		sqlite3_prepare_v2(db, "select max (handle) from objects", -1, &stmt, NULL);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW)
+	{
+		val = sqlite3_column_int(stmt, 0);
+		sqlite3_finalize(stmt);
+	}
+
+	return val + 1;
+}
+
+CK_RV token::generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey)
+{
+	CK_RV rv = CKR_OK;
+
+	int handle = getNextObjectHandle();
+
+	unsigned char* key = NULL;
+	int len = 0;
+	int found = 0;
+	bool persistentObject = false;
+
+	for (unsigned int i = 0; i < ulCount && found < 2; i++)
+	{
+		switch (pTemplate[i].type) {
+		case CKA_VALUE_LEN:
+			len = *(CK_ULONG*) pTemplate[i].pValue;
+			found++;
+			break;
+		case CKA_TOKEN:
+			persistentObject = *(CK_BBOOL*) pTemplate[i].pValue;
+			found++;
+			break;
+		}
+	}
+
+	if (found != 2)
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
+	if (!rv)
+	{
+		key = new unsigned char[len];
+		rv = C_GenerateRandom(hSession, key, len);
+	}
+
+	if (!rv)
+		if (!saveKey(key, len, persistentObject ? 0 : hSession, handle))
+			rv = CKR_DEVICE_ERROR;
+
+	if (!rv)
+		if (!saveObjectTemplate(pTemplate, ulCount, handle))
+			rv = CKR_DEVICE_ERROR;
+
+	if (key) delete [] key;
+
+	if (!rv)
+		*phKey = handle;
+
+	return rv;
+}
+
+bool token::saveKey(const unsigned char* key, const int len, CK_SESSION_HANDLE session, const int handle)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+
+	rc = sqlite3_prepare_v2(db, "insert into objects(handle, type, session, data) values (?,?,?,?);", -1, &stmt, NULL);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, handle);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 2, CKO_SECRET_KEY);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 3, session);
+	if (!rc)
+		rc = sqlite3_bind_blob(stmt, 4, key, len, NULL);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+		sqlite3_finalize(stmt);
+
+	return rc == SQLITE_DONE;
+}
+
+bool token::saveObjectTemplate(const CK_ATTRIBUTE_PTR pTemplate, const CK_ULONG ulCount, const int handle)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+
+	for (unsigned int i = 0; i < ulCount && (rc == SQLITE_OK || rc == SQLITE_DONE); i++)
+	{
+		rc = sqlite3_prepare_v2(db, "insert into objectAttributes(handle, type, data) values (?,?,?);", -1, &stmt, NULL);
+
+//		std::cout << pTemplate[i].type << " " << *pTemplate[i].pValue << std::endl;
+		
+		if (!rc)
+			rc = sqlite3_bind_int(stmt, 1, handle);
+		if (!rc)
+			rc = sqlite3_bind_int(stmt, 2, pTemplate[i].type);
+		if (!rc)
+			rc = sqlite3_bind_blob(stmt, 3, pTemplate[i].pValue, pTemplate[i].ulValueLen, NULL);
+		if (!rc)
+			rc = sqlite3_step(stmt);
+		if (rc == SQLITE_DONE)
+			sqlite3_finalize(stmt);
+	}
+
+	return rc == SQLITE_DONE;
 }

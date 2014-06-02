@@ -17,7 +17,7 @@ class session
 public:
 	session(CK_SESSION_HANDLE handle, CK_SLOT_ID slotID);
 	~session();
-	
+
 	void getSessionInfo(CK_SESSION_INFO_PTR out);
 	bool hasRWSOSession();
 	void setRW();
@@ -26,7 +26,7 @@ public:
 private:
 	CK_SESSION_HANDLE handle;
 	CK_SESSION_INFO_PTR pInfo;
-	
+
 	// will need temporary objects
 };
 
