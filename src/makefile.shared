@@ -4,8 +4,8 @@
 CC=g++
 BUILD=build
 DIST=dist
-OUTPUT=libpkcs11.so
-CCFLAGS=-c -g -Wall -ansi -fPIC
+OUTPUT=prog
+CCFLAGS=-c -O2 -Wall -ansi -fPIC
 LDFLAGS=-shared -o $(DIST)/$(OUTPUT) -lpthread -lssl -lcrypto -lsqlite3 
 
 all:	$(DIST)/$(OUTPUT)
@@ -43,7 +43,7 @@ $(BUILD)/mutex.o:	mutex.cpp p11.h mutex.h
 	$(CC) mutex.cpp $(CCFLAGS) -o $(BUILD)/mutex.o
 $(BUILD)/c_encrypt.o:	c_encrypt.cpp log.h p11.h
 	$(CC) c_encrypt.cpp $(CCFLAGS) -o $(BUILD)/c_encrypt.o
-$(BUILD)/c_key.o:	c_key.cpp log.h p11.h
+$(BUILD)/c_key.o:	c_key.cpp log.h mechanisms.h p11.h slot.h
 	$(CC) c_key.cpp $(CCFLAGS) -o $(BUILD)/c_key.o
 $(BUILD):
 	@mkdir $(BUILD)

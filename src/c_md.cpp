@@ -165,9 +165,27 @@ CK_RV C_DigestKey(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hKey)
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	int slot = getSlotBySession(hSession);
+	unsigned char* buff = NULL;
+	unsigned int buffLen = 0;
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && !md)
+		rv = CKR_OPERATION_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && !(*slots)[slot]->tokenHasSecretKeyByHandle(hKey))
+		rv = CKR_KEY_HANDLE_INVALID;
 
+	if (!rv)
+		if (!(*slots)[slot]->getSecretKeyData(hKey, &buff, &buffLen))
+			rv = CKR_DEVICE_ERROR;
+	if (!rv)
+		rv = C_DigestUpdate(hSession, (CK_BYTE_PTR) buff, buffLen);
+
+	if (buff) delete [] buff;
+	
 	LOG_RETURNCODE(rv);
 
 	return rv;

@@ -10,8 +10,9 @@
 #include <cstring>
 #include <fstream>
 #include <map>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
 #include <sqlite3.h>
-#include <iostream>
 #include "p11.h"
 #include "session.h"
 #include "token.h"
@@ -829,6 +830,109 @@ CK_RV token::generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate,
 	return rv;
 }
 
+CK_RV token::generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey)
+{
+	CK_RV rv = CKR_OK;
+
+	int pubHandle = getNextObjectHandle();
+	int privHandle = pubHandle + 1;
+	int exp = 0;
+	int modulusBits = 0;
+	int found = 0;
+	bool persistentObject = false;
+	RSA *rsa = NULL;
+	unsigned char* pubPEM = NULL;
+	int pubLen = 0;
+	unsigned char* privPEM = NULL;
+	int privLen = 0;
+	BIO* bio = NULL;
+
+	for (unsigned int i = 0; i < ulPublicKeyAttributeCount && found < 3; i++)
+	{
+		switch (pPublicKeyTemplate[i].type) {
+		case CKA_MODULUS_BITS:
+			modulusBits = *(CK_ULONG*) pPublicKeyTemplate[i].pValue;
+			found++;
+			break;
+		case CKA_PUBLIC_EXPONENT:
+			memcpy(&exp, pPublicKeyTemplate[i].pValue, pPublicKeyTemplate[i].ulValueLen);
+			found++;
+			break;
+		case CKA_TOKEN:
+			persistentObject = *(CK_BBOOL*) pPublicKeyTemplate[i].pValue;
+			found++;
+			break;
+		}
+	}
+
+	if (found != 3)
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
+	if (!rv)
+	{
+		rsa = RSA_generate_key(modulusBits, exp, NULL, NULL);
+		if (!rsa)
+			rv = CKR_DEVICE_ERROR;
+	}
+	if (!rv)
+	{
+		bio = BIO_new(BIO_s_mem());
+		if (!bio)
+			rv = CKR_DEVICE_MEMORY;
+	}
+	if (!rv)
+	{
+		if (!PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL))
+			rv = CKR_DEVICE_ERROR;
+	}
+	if (!rv)
+	{
+		privLen = BIO_pending(bio);
+		privPEM = new unsigned char[privLen + 1];
+		if (!privPEM)
+			rv = CKR_DEVICE_MEMORY;
+	}
+	if (!rv)
+	{
+		BIO_read(bio, privPEM, privLen);
+		privPEM[privLen] = 0;
+		if (!PEM_write_bio_RSAPublicKey(bio, rsa))
+			rv = CKR_DEVICE_ERROR;
+	}
+	if (!rv)
+	{
+		pubLen = BIO_pending(bio);
+		pubPEM = new unsigned char[pubLen + 1];
+		if (!pubPEM)
+			rv = CKR_DEVICE_MEMORY;
+	}
+	if (!rv)
+	{
+		BIO_read(bio, pubPEM, pubLen);
+		pubPEM[pubLen] = 0;
+	}
+
+	if (!rv)
+		if (!saveKey(privPEM, privLen, persistentObject ? 0 : hSession, privHandle))
+			rv = CKR_DEVICE_ERROR;
+	if (!rv)
+		if (!saveKey(pubPEM, pubLen, persistentObject ? 0 : hSession, pubHandle))
+			rv = CKR_DEVICE_ERROR;
+	if (!rv)
+		if (!saveObjectTemplate(pPrivateKeyTemplate, ulPrivateKeyAttributeCount, privHandle))
+			rv = CKR_DEVICE_ERROR;
+	if (!rv)
+		if (!saveObjectTemplate(pPublicKeyTemplate, ulPublicKeyAttributeCount, pubHandle))
+			rv = CKR_DEVICE_ERROR;
+
+	if (bio) BIO_free_all(bio);
+	if (rsa) RSA_free(rsa);
+	if (pubPEM) delete [] pubPEM;
+	if (privPEM) delete [] privPEM;
+
+	return rv;
+}
+
 bool token::saveKey(const unsigned char* key, const int len, CK_SESSION_HANDLE session, const int handle)
 {
 	int rc = SQLITE_OK;
@@ -860,8 +964,6 @@ bool token::saveObjectTemplate(const CK_ATTRIBUTE_PTR pTemplate, const CK_ULONG 
 	{
 		rc = sqlite3_prepare_v2(db, "insert into objectAttributes(handle, type, data) values (?,?,?);", -1, &stmt, NULL);
 
-//		std::cout << pTemplate[i].type << " " << *pTemplate[i].pValue << std::endl;
-		
 		if (!rc)
 			rc = sqlite3_bind_int(stmt, 1, handle);
 		if (!rc)
@@ -875,4 +977,47 @@ bool token::saveObjectTemplate(const CK_ATTRIBUTE_PTR pTemplate, const CK_ULONG 
 	}
 
 	return rc == SQLITE_DONE;
+}
+
+bool token::hasSecretKeyByHandle(CK_OBJECT_HANDLE hKey)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+	bool validHandle = false;
+
+	rc = sqlite3_prepare_v2(db, "select count(*) from objects where handle=? and type=?", -1, &stmt, NULL);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hKey);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 2, CKO_SECRET_KEY);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW)
+		validHandle = sqlite3_column_int(stmt, 0) == 1;
+	sqlite3_finalize(stmt);
+
+	return validHandle;
+}
+
+bool token::getSecretKeyData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+
+	rc = sqlite3_prepare_v2(db, "select data from objects where handle=?", -1, &stmt, NULL);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hKey);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW)
+	{
+		*buffLen = sqlite3_column_bytes(stmt, 0);
+		*buff = new unsigned char[*buffLen];
+
+		memcpy(*buff, sqlite3_column_blob(stmt, 0), *buffLen);
+	}
+
+	sqlite3_finalize(stmt);
+
+	return rc == SQLITE_ROW;
 }

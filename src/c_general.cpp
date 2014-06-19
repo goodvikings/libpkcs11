@@ -8,6 +8,8 @@
  */
 
 #include <fstream>
+#include <openssl/err.h>
+#include <openssl/evp.h>
 #include <string.h>
 #include <stdlib.h>
 #include "mutex.h"
@@ -77,6 +79,12 @@ CK_RV C_Initialize(CK_VOID_PTR pInitArgs)
 		}
 	}
 
+	if (!rv)
+	{
+		OpenSSL_add_all_algorithms();
+		ERR_load_crypto_strings();
+	}
+
 	if (foo) delete foo;
 
 	if (!rv) cryptokiInitialized = true;
@@ -121,6 +129,14 @@ CK_RV C_Finalize(CK_VOID_PTR pReserved)
 			}
 			delete slots;
 		}
+	}
+
+	if (!rv)
+	{
+		CRYPTO_cleanup_all_ex_data();
+		ERR_free_strings();
+		ERR_remove_state(0);
+		EVP_cleanup();
 	}
 
 	LOG_RETURNCODE(rv);

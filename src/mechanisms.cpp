@@ -735,7 +735,16 @@ bool mechanisms::isSupportedSecretKeyType(CK_KEY_TYPE keyType)
 	return false;
 }
 
-void mechanisms::getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_PTR* mechs, int* len)
+bool mechanisms::isSupportedAsymKeyType(CK_KEY_TYPE keyType)
+{
+	for (int i = 0; i < asymKeyTypeCount; i++)
+		if (keyType == asymKeyTypes[i])
+			return true;
+
+	return false;
+}
+
+bool mechanisms::getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_PTR* mechs, int* len)
 {
 	switch (keyType) {
 	case CKK_DES:
@@ -772,5 +781,20 @@ void mechanisms::getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_P
 		(*mechs)[5] = CKM_AES_CBC_PAD;
 		(*mechs)[6] = CKM_AES_CTR;
 		break;
+	case CKK_RSA:
+		*len = 8;
+		*mechs = new CK_MECHANISM_TYPE[*len];
+		(*mechs)[0] = CKM_RSA_PKCS_KEY_PAIR_GEN;
+		(*mechs)[1] = CKM_RSA_PKCS;
+		(*mechs)[2] = CKM_MD5_RSA_PKCS;
+		(*mechs)[3] = CKM_SHA1_RSA_PKCS;
+		(*mechs)[4] = CKM_RSA_PKCS_OAEP;
+		(*mechs)[5] = CKM_SHA256_RSA_PKCS;
+		(*mechs)[6] = CKM_SHA384_RSA_PKCS;
+		(*mechs)[7] = CKM_SHA512_RSA_PKCS;
+		break;
+	default:
+		return false;
 	}
+	return true;
 }

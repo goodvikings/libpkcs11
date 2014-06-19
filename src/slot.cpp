@@ -289,3 +289,27 @@ CK_RV slot::generateKey(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
 	else
 		return CKR_TOKEN_NOT_PRESENT;
 }
+
+CK_RV slot::generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey)
+{
+	if (isTokenPresent())
+		return t->generateKeyPair(hSession, pMechanism, pPublicKeyTemplate, ulPublicKeyAttributeCount, pPrivateKeyTemplate, ulPrivateKeyAttributeCount, phPublicKey, phPrivateKey);
+	else
+		return CKR_TOKEN_NOT_PRESENT;
+}
+
+bool slot::tokenHasSecretKeyByHandle(CK_OBJECT_HANDLE hKey)
+{
+	if (isTokenPresent())
+		return t->hasSecretKeyByHandle(hKey);
+	else
+		return CKR_DEVICE_ERROR; // Would normally return token not present, but not allowed for this function since we have a 'valid' key handle and therefore must have gotten it from a token
+}
+
+bool slot::getSecretKeyData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen)
+{
+	if (isTokenPresent() && t->hasSecretKeyByHandle(hKey))
+		return t->getSecretKeyData(hKey, buff, buffLen);
+	else
+		return false;
+}
