@@ -6,7 +6,7 @@ BUILD=build
 DIST=dist
 OUTPUT=prog
 CCFLAGS=-c -g -Wall -ansi
-LDFLAGS=-o $(DIST)/$(OUTPUT) -lpthread -lssl -lcrypto -lsqlite3 
+LDFLAGS=-o $(DIST)/$(OUTPUT) -lssl -lcrypto -lpthread -lsqlite3 
 
 all:	$(DIST)/$(OUTPUT)
 $(DIST)/$(OUTPUT):	$(BUILD) $(DIST) $(BUILD)/mechanisms.o $(BUILD)/session.o $(BUILD)/slot.o $(BUILD)/c_general.o $(BUILD)/c_token.o $(BUILD)/c_session.o $(BUILD)/log.o $(BUILD)/c_manage.o $(BUILD)/c_object.o $(BUILD)/c_rand.o $(BUILD)/token.o $(BUILD)/c_md.o $(BUILD)/c_sign.o $(BUILD)/c_dual.o $(BUILD)/mutex.o $(BUILD)/c_encrypt.o $(BUILD)/c_key.o $(BUILD)/prog.o 
@@ -41,7 +41,7 @@ $(BUILD)/c_dual.o:	c_dual.cpp log.h p11.h
 	$(CC) c_dual.cpp $(CCFLAGS) -o $(BUILD)/c_dual.o
 $(BUILD)/mutex.o:	mutex.cpp p11.h mutex.h
 	$(CC) mutex.cpp $(CCFLAGS) -o $(BUILD)/mutex.o
-$(BUILD)/c_encrypt.o:	c_encrypt.cpp log.h p11.h
+$(BUILD)/c_encrypt.o:	c_encrypt.cpp log.h mechanisms.h p11.h slot.h
 	$(CC) c_encrypt.cpp $(CCFLAGS) -o $(BUILD)/c_encrypt.o
 $(BUILD)/c_key.o:	c_key.cpp log.h mechanisms.h p11.h slot.h
 	$(CC) c_key.cpp $(CCFLAGS) -o $(BUILD)/c_key.o

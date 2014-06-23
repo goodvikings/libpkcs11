@@ -633,7 +633,7 @@ bool populateDefaultGenerateKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE
 
 		good = mapAttribute(dest, attr);
 
-		delete (CK_KEY_TYPE*) attr.pValue;
+		delete (CK_ULONG*) attr.pValue;
 	}
 
 	if (good && !(*dest)[CKA_ID])

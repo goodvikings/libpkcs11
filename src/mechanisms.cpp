@@ -189,10 +189,6 @@ mechanisms::mechanisms()
 	(*m)[CKM_DES_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_DES_CBC_PAD                0x00000125
-	(*m)[CKM_DES_CBC_PAD] = new CK_MECHANISM_INFO;
-	(*m)[CKM_DES_CBC_PAD]->ulMaxKeySize = DESMAXKEYSIZE;
-	(*m)[CKM_DES_CBC_PAD]->ulMinKeySize = DESMINKEYSIZE;
-	(*m)[CKM_DES_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_DES2_KEY_GEN               0x00000130
 
@@ -227,10 +223,6 @@ mechanisms::mechanisms()
 	(*m)[CKM_DES3_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_DES3_CBC_PAD               0x00000136
-	(*m)[CKM_DES3_CBC_PAD] = new CK_MECHANISM_INFO;
-	(*m)[CKM_DES3_CBC_PAD]->ulMaxKeySize = DES3MAXKEYSIZE;
-	(*m)[CKM_DES3_CBC_PAD]->ulMinKeySize = DES3MINKEYSIZE;
-	(*m)[CKM_DES3_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_CDMF_KEY_GEN               0x00000140
 
@@ -641,10 +633,6 @@ mechanisms::mechanisms()
 	(*m)[CKM_AES_MAC_GENERAL]->flags = CKF_SIGN | CKF_VERIFY;
 
 	//#define CKM_AES_CBC_PAD                0x00001085
-	(*m)[CKM_AES_CBC_PAD] = new CK_MECHANISM_INFO;
-	(*m)[CKM_AES_CBC_PAD]->ulMaxKeySize = AESMAXKEYSIZE;
-	(*m)[CKM_AES_CBC_PAD]->ulMinKeySize = AESMINKEYSIZE;
-	(*m)[CKM_AES_CBC_PAD]->flags = CKF_ENCRYPT | CKF_DECRYPT | CKF_WRAP | CKF_UNWRAP;
 
 	//#define CKM_AES_CTR                    0x00001086
 	(*m)[CKM_AES_CTR] = new CK_MECHANISM_INFO;
@@ -748,13 +736,12 @@ bool mechanisms::getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_P
 {
 	switch (keyType) {
 	case CKK_DES:
-		*len = 5;
+		*len = 4;
 		*mechs = new CK_MECHANISM_TYPE[*len];
 		(*mechs)[0] = CKM_DES_ECB;
 		(*mechs)[1] = CKM_DES_CBC;
 		(*mechs)[2] = CKM_DES_MAC;
 		(*mechs)[3] = CKM_DES_MAC_GENERAL;
-		(*mechs)[4] = CKM_DES_CBC_PAD;
 		break;
 	case CKK_RC4:
 		*len = 1;
@@ -762,24 +749,22 @@ bool mechanisms::getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_P
 		(*mechs)[0] = CKM_RC4;
 		break;
 	case CKK_DES3:
-		*len = 5;
+		*len = 4;
 		*mechs = new CK_MECHANISM_TYPE[*len];
 		(*mechs)[0] = CKM_DES3_ECB;
 		(*mechs)[1] = CKM_DES3_CBC;
 		(*mechs)[2] = CKM_DES3_MAC;
 		(*mechs)[3] = CKM_DES3_MAC_GENERAL;
-		(*mechs)[4] = CKM_DES3_CBC_PAD;
 		break;
 	case CKK_AES:
-		*len = 7;
+		*len = 6;
 		*mechs = new CK_MECHANISM_TYPE[*len];
 		(*mechs)[0] = CKM_AES_KEY_GEN;
 		(*mechs)[1] = CKM_AES_ECB;
 		(*mechs)[2] = CKM_AES_CBC;
 		(*mechs)[3] = CKM_AES_MAC;
 		(*mechs)[4] = CKM_AES_MAC_GENERAL;
-		(*mechs)[5] = CKM_AES_CBC_PAD;
-		(*mechs)[6] = CKM_AES_CTR;
+		(*mechs)[5] = CKM_AES_CTR;
 		break;
 	case CKK_RSA:
 		*len = 8;
@@ -797,4 +782,44 @@ bool mechanisms::getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_P
 		return false;
 	}
 	return true;
+}
+
+bool mechanisms::keyValidForMechanism(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE mech)
+{
+	bool rv = false;
+	CK_MECHANISM_TYPE_PTR mechs = NULL;
+	int len = 0;
+
+	getMechanismsByKeyType(keyType, &mechs, &len);
+
+	for (int i = 0; i < len; i++)
+	{
+		if (mechs[i] == mech)
+			rv = true;
+	}
+
+	delete [] mechs;
+
+	return rv;
+}
+
+unsigned int mechanisms::requiredIVSizeForMechanism(CK_MECHANISM_TYPE mech)
+{
+	unsigned int rv = 0;
+
+	switch (mech) {
+	case CKM_DES_CBC:
+	case CKM_DES_CBC_PAD:
+	case CKM_DES3_CBC:
+	case CKM_DES3_CBC_PAD:
+		rv = 8;
+		break;
+	case CKM_AES_CBC:
+	case CKM_AES_CBC_PAD:
+	case CKM_AES_CTR:
+		rv = 16;
+		break;
+	}
+
+	return rv;
 }

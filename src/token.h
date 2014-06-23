@@ -98,7 +98,11 @@ public:
 	CK_RV generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey);
 
 	bool hasSecretKeyByHandle(CK_OBJECT_HANDLE hKey);
-	bool getSecretKeyData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen);
+	bool getObjectDataByHandle(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen);
+	
+	bool keyHasAttributeMatch(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void* value, int valueLen);
+	CK_KEY_TYPE getKeyTypeByHandle(CK_OBJECT_HANDLE hKey);
+	bool getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void** buff, unsigned int* buffLen);
 private:
 	sqlite3 *db;
 	char* filename;

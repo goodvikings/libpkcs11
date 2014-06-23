@@ -306,10 +306,34 @@ bool slot::tokenHasSecretKeyByHandle(CK_OBJECT_HANDLE hKey)
 		return CKR_DEVICE_ERROR; // Would normally return token not present, but not allowed for this function since we have a 'valid' key handle and therefore must have gotten it from a token
 }
 
-bool slot::getSecretKeyData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen)
+bool slot::getObjectData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen)
 {
 	if (isTokenPresent() && t->hasSecretKeyByHandle(hKey))
-		return t->getSecretKeyData(hKey, buff, buffLen);
+		return t->getObjectDataByHandle(hKey, buff, buffLen);
+	else
+		return false;
+}
+
+bool slot::keyHasAttributeMatch(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void* value, int valueLen)
+{
+	if (isTokenPresent() && t->hasSecretKeyByHandle(hKey))
+		return t->keyHasAttributeMatch(hKey, attrType, value, valueLen);
+	else
+		return false;
+}
+
+CK_KEY_TYPE slot::getKeyTypeByHandle(CK_OBJECT_HANDLE hKey)
+{
+	if (isTokenPresent() && t->hasSecretKeyByHandle(hKey))
+		return t->getKeyTypeByHandle(hKey);
+	else
+		return false;
+}
+
+bool slot::getObjectAttributeData(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void** buff, unsigned int* buffLen)
+{
+	if (isTokenPresent() && t->hasSecretKeyByHandle(hKey))
+		return t->getObjectAttributeDataByHandle(hKey, attrType, buff, buffLen);
 	else
 		return false;
 }

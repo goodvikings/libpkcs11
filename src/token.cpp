@@ -38,7 +38,8 @@ token::~token()
 	}
 
 	delete sessions;
-	if (db) sqlite3_close(db);
+
+	if (db) sqlite3_close_v2(db);
 }
 
 bool token::open(const char* filename)
@@ -999,7 +1000,7 @@ bool token::hasSecretKeyByHandle(CK_OBJECT_HANDLE hKey)
 	return validHandle;
 }
 
-bool token::getSecretKeyData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen)
+bool token::getObjectDataByHandle(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen)
 {
 	int rc = SQLITE_OK;
 	sqlite3_stmt *stmt = NULL;
@@ -1007,6 +1008,83 @@ bool token::getSecretKeyData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsign
 	rc = sqlite3_prepare_v2(db, "select data from objects where handle=?", -1, &stmt, NULL);
 	if (!rc)
 		rc = sqlite3_bind_int(stmt, 1, hKey);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW)
+	{
+		*buffLen = sqlite3_column_bytes(stmt, 0);
+		*buff = new unsigned char[*buffLen];
+
+		memcpy(*buff, sqlite3_column_blob(stmt, 0), *buffLen);
+	}
+
+	sqlite3_finalize(stmt);
+
+	return rc == SQLITE_ROW;
+}
+
+bool token::keyHasAttributeMatch(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void* value, int valueLen)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+	bool flag = false;
+
+	rc = sqlite3_prepare_v2(db, "select count(*) from objectAttributes where handle=? and type=? and data=?", -1, &stmt, NULL);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hKey);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 2, attrType);
+	if (!rc)
+		rc = sqlite3_bind_blob(stmt, 3, value, valueLen, NULL);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW)
+		flag = sqlite3_column_int(stmt, 0) == 1;
+	sqlite3_finalize(stmt);
+
+	return flag;
+}
+
+CK_KEY_TYPE token::getKeyTypeByHandle(CK_OBJECT_HANDLE hKey)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+	unsigned char* buff = NULL;
+	unsigned int buffLen = 0;
+	unsigned long val = 0;
+
+	rc = sqlite3_prepare_v2(db, "select data from objectAttributes where handle=? and type=?", -1, &stmt, NULL);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hKey);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 2, CKA_KEY_TYPE);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW)
+	{
+		buffLen = sqlite3_column_bytes(stmt, 0);
+		buff = new unsigned char[buffLen];
+
+		memcpy(&val, sqlite3_column_blob(stmt, 0), buffLen);
+	}
+
+	sqlite3_finalize(stmt);
+
+	delete [] buff;
+
+	return val;
+}
+
+bool token::getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void** buff, unsigned int* buffLen)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+
+	rc = sqlite3_prepare_v2(db, "select data from objectAttributes where handle=? and type=?", -1, &stmt, NULL);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hKey);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, attrType);
 	if (!rc)
 		rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW)

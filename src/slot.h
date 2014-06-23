@@ -53,7 +53,10 @@ public:
 	CK_RV generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey);
 	bool tokenHasSecretKeyByHandle(CK_OBJECT_HANDLE hKey);
 	
-	bool getSecretKeyData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen);
+	bool getObjectData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen);
+	bool getObjectAttributeData(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void** buff, unsigned int* buffLen);
+	bool keyHasAttributeMatch(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void* value, int valueLen);
+	CK_KEY_TYPE getKeyTypeByHandle(CK_OBJECT_HANDLE hKey);
 private:
 	token* t;
 	CK_SLOT_ID id;

@@ -179,7 +179,7 @@ CK_RV C_DigestKey(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hKey)
 		rv = CKR_KEY_HANDLE_INVALID;
 
 	if (!rv)
-		if (!(*slots)[slot]->getSecretKeyData(hKey, &buff, &buffLen))
+		if (!(*slots)[slot]->getObjectData(hKey, &buff, &buffLen))
 			rv = CKR_DEVICE_ERROR;
 	if (!rv)
 		rv = C_DigestUpdate(hSession, (CK_BYTE_PTR) buff, buffLen);
