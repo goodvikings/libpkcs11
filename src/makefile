@@ -27,7 +27,7 @@ $(BUILD)/log.o:	log.cpp log.h p11.h
 	$(CC) log.cpp $(CCFLAGS) -o $(BUILD)/log.o
 $(BUILD)/c_manage.o:	c_manage.cpp log.h p11.h
 	$(CC) c_manage.cpp $(CCFLAGS) -o $(BUILD)/c_manage.o
-$(BUILD)/c_object.o:	c_object.cpp log.h p11.h
+$(BUILD)/c_object.o:	c_object.cpp log.h p11.h slot.h
 	$(CC) c_object.cpp $(CCFLAGS) -o $(BUILD)/c_object.o
 $(BUILD)/c_rand.o:	c_rand.cpp log.h p11.h slot.h
 	$(CC) c_rand.cpp $(CCFLAGS) -o $(BUILD)/c_rand.o

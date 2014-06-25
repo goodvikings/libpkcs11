@@ -337,3 +337,11 @@ bool slot::getObjectAttributeData(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrT
 	else
 		return false;
 }
+
+bool slot::createObject(CK_SESSION_HANDLE handle, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate)
+{
+	if (isTokenPresent())
+		return t->createObject(handle, pTemplate);
+	else
+		return false;
+}

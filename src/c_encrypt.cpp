@@ -156,11 +156,21 @@ CK_RV C_Encrypt(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData, CK_ULONG ulDataLe
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	unsigned long reqBuffLen = 0;
 
 	unsigned long len = *pulEncryptedDataLen;
 	unsigned long len2 = 0;
 
-	rv = C_EncryptUpdate(hSession, pData, ulDataLen, pEncryptedData, pulEncryptedDataLen);
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && !ctx)
+		rv = CKR_OPERATION_NOT_INITIALIZED;
+	if (!rv)
+		reqBuffLen = ((ulDataLen / EVP_CIPHER_CTX_block_size(ctx)) + 1) * EVP_CIPHER_CTX_block_size(ctx);
+	if (!rv && reqBuffLen > *pulEncryptedDataLen)
+		rv = CKR_BUFFER_TOO_SMALL;
+	if (!rv)
+		rv = C_EncryptUpdate(hSession, pData, ulDataLen, pEncryptedData, pulEncryptedDataLen);
 
 	if (!rv)
 	{
@@ -382,11 +392,20 @@ CK_RV C_Decrypt(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pEncryptedData, CK_ULONG
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-
+	unsigned long reqBuffLen = 0;
 	unsigned long len = *pulDataLen;
 	unsigned long len2 = 0;
 
-	rv = C_DecryptUpdate(hSession, pEncryptedData, ulEncryptedDataLen, pData, pulDataLen);
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && !ctx)
+		rv = CKR_OPERATION_NOT_INITIALIZED;
+	if (!rv)
+		reqBuffLen = ((ulEncryptedDataLen / EVP_CIPHER_CTX_block_size(ctx)) + 1) * EVP_CIPHER_CTX_block_size(ctx);
+	if (!rv && reqBuffLen > *pulDataLen)
+		rv = CKR_BUFFER_TOO_SMALL;
+	if (!rv)
+		rv = C_DecryptUpdate(hSession, pEncryptedData, ulEncryptedDataLen, pData, pulDataLen);
 
 	if (!rv)
 	{

@@ -96,7 +96,8 @@ public:
 
 	CK_RV generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey);
 	CK_RV generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey);
-
+	bool createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate);
+	
 	bool hasSecretKeyByHandle(CK_OBJECT_HANDLE hKey);
 	bool getObjectDataByHandle(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen);
 	
@@ -120,10 +121,9 @@ private:
 	bool setPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, bool isUser);
 	void removeSessionObjects(CK_SESSION_HANDLE hSession);
 	int getNextObjectHandle();
-	
+		
+	bool saveObject(const unsigned char* data, const int len, CK_SESSION_HANDLE pSession, const int handle);
 	bool saveObjectTemplate(const CK_ATTRIBUTE_PTR pTemplate, const CK_ULONG ulCount, const int handle);
-	
-	bool saveKey(const unsigned char* key, const int len, CK_SESSION_HANDLE pSession, const int handle);
 };
 
 #endif

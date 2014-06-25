@@ -794,7 +794,8 @@ CK_RV token::generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate,
 
 	for (unsigned int i = 0; i < ulCount && found < 2; i++)
 	{
-		switch (pTemplate[i].type) {
+		switch (pTemplate[i].type)
+		{
 		case CKA_VALUE_LEN:
 			len = *(CK_ULONG*) pTemplate[i].pValue;
 			found++;
@@ -816,7 +817,7 @@ CK_RV token::generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate,
 	}
 
 	if (!rv)
-		if (!saveKey(key, len, persistentObject ? 0 : hSession, handle))
+		if (!saveObject(key, len, persistentObject ? 0 : hSession, handle))
 			rv = CKR_DEVICE_ERROR;
 
 	if (!rv)
@@ -850,7 +851,8 @@ CK_RV token::generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMecha
 
 	for (unsigned int i = 0; i < ulPublicKeyAttributeCount && found < 3; i++)
 	{
-		switch (pPublicKeyTemplate[i].type) {
+		switch (pPublicKeyTemplate[i].type)
+		{
 		case CKA_MODULUS_BITS:
 			modulusBits = *(CK_ULONG*) pPublicKeyTemplate[i].pValue;
 			found++;
@@ -914,10 +916,10 @@ CK_RV token::generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMecha
 	}
 
 	if (!rv)
-		if (!saveKey(privPEM, privLen, persistentObject ? 0 : hSession, privHandle))
+		if (!saveObject(privPEM, privLen, persistentObject ? 0 : hSession, privHandle))
 			rv = CKR_DEVICE_ERROR;
 	if (!rv)
-		if (!saveKey(pubPEM, pubLen, persistentObject ? 0 : hSession, pubHandle))
+		if (!saveObject(pubPEM, pubLen, persistentObject ? 0 : hSession, pubHandle))
 			rv = CKR_DEVICE_ERROR;
 	if (!rv)
 		if (!saveObjectTemplate(pPrivateKeyTemplate, ulPrivateKeyAttributeCount, privHandle))
@@ -934,7 +936,7 @@ CK_RV token::generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMecha
 	return rv;
 }
 
-bool token::saveKey(const unsigned char* key, const int len, CK_SESSION_HANDLE session, const int handle)
+bool token::saveObject(const unsigned char* data, const int len, CK_SESSION_HANDLE session, const int handle)
 {
 	int rc = SQLITE_OK;
 	sqlite3_stmt *stmt = NULL;
@@ -947,7 +949,7 @@ bool token::saveKey(const unsigned char* key, const int len, CK_SESSION_HANDLE s
 	if (!rc)
 		rc = sqlite3_bind_int(stmt, 3, session);
 	if (!rc)
-		rc = sqlite3_bind_blob(stmt, 4, key, len, NULL);
+		rc = sqlite3_bind_blob(stmt, 4, data, len, NULL);
 	if (!rc)
 		rc = sqlite3_step(stmt);
 	if (rc == SQLITE_DONE)
@@ -1098,4 +1100,42 @@ bool token::getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_T
 	sqlite3_finalize(stmt);
 
 	return rc == SQLITE_ROW;
+}
+
+bool token::createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate)
+{
+	bool rv = false;
+	int handle = getNextObjectHandle();
+
+	rv = saveObject((unsigned char*) (*pTemplate)[CKA_VALUE]->pValue, (*pTemplate)[CKA_VALUE]->ulValueLen, *(CK_BBOOL*) (*pTemplate)[CKA_TOKEN]->pValue ? 0 : session, handle);
+
+
+	if (rv)
+	{
+		int rc = SQLITE_OK;
+		sqlite3_stmt *stmt = NULL;
+
+		for (std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>::iterator iter = pTemplate->begin(); iter != pTemplate->end(); iter++)
+		{
+			if (iter->first == CKA_VALUE)
+				continue;
+			
+			rc = sqlite3_prepare_v2(db, "insert into objectAttributes(handle, type, data) values (?,?,?);", -1, &stmt, NULL);
+
+			if (!rc)
+				rc = sqlite3_bind_int(stmt, 1, handle);
+			if (!rc)
+				rc = sqlite3_bind_int(stmt, 2, iter->first);
+			if (!rc)
+				rc = sqlite3_bind_blob(stmt, 3, iter->second->pValue, iter->second->ulValueLen, NULL);
+			if (!rc)
+				rc = sqlite3_step(stmt);
+			if (rc == SQLITE_DONE)
+				sqlite3_finalize(stmt);
+		}
+
+		rv = rc == SQLITE_DONE;
+	}
+
+	return rv;
 }

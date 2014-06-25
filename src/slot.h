@@ -51,6 +51,8 @@ public:
 
 	CK_RV generateKey(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey);
 	CK_RV generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey);
+	bool createObject(CK_SESSION_HANDLE handle, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate);
+	
 	bool tokenHasSecretKeyByHandle(CK_OBJECT_HANDLE hKey);
 	
 	bool getObjectData(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen);
