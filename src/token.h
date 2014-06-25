@@ -104,6 +104,10 @@ public:
 	bool keyHasAttributeMatch(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void* value, int valueLen);
 	CK_KEY_TYPE getKeyTypeByHandle(CK_OBJECT_HANDLE hKey);
 	bool getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void** buff, unsigned int* buffLen);
+	
+	bool destroyObject(CK_OBJECT_HANDLE hObject);
+	
+	bool findObjects(CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR* results, unsigned int* resultsLen);
 private:
 	sqlite3 *db;
 	char* filename;

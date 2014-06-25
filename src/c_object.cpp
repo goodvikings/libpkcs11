@@ -10,8 +10,8 @@
 #include "log.h"
 #include "p11.h"
 #include "slot.h"
-#include <string.h>
 #include <map>
+#include <string.h>
 #include <vector>
 
 extern bool cryptokiInitialized;
@@ -19,20 +19,25 @@ extern std::vector<slot*>* slots;
 
 extern int getSlotBySession(CK_SESSION_HANDLE hSession);
 
-void generateDefaultDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
-void generateDefaultX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
-void generateDefaultX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
-void generateDefaultWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
-void generateDefaultPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
-void generateDefaultPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
-void generateDefaultSecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
-CK_RV applyDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
-CK_RV applyX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
-CK_RV applyX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
-CK_RV applyWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
-CK_RV applyPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
-CK_RV applyPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
-CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+static CK_OBJECT_HANDLE_PTR findResults = NULL;
+static unsigned int nextResult = 0;
+static unsigned int resultLen = 0;
+
+// <editor-fold defaultstate="collapsed" desc="collapse!">
+static void generateDefaultDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+static void generateDefaultX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+static void generateDefaultX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+static void generateDefaultWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+static void generateDefaultPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+static void generateDefaultPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+static void generateDefaultSecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+static CK_RV applyDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+static CK_RV applyX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+static CK_RV applyX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+static CK_RV applyWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+static CK_RV applyPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+static CK_RV applyPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+static CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
 
 CK_RV C_CreateObject(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phObject)
 {
@@ -171,8 +176,21 @@ CK_RV C_DestroyObject(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject)
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	int slot = getSlotBySession(hSession);
+	CK_STATE state = (*slots)[slot]->getTokenState();
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && (state == CKS_RO_USER_FUNCTIONS || state == CKS_RO_PUBLIC_SESSION))
+		rv = CKR_SESSION_READ_ONLY;
+	if (!rv && !(state == CKS_RO_USER_FUNCTIONS || state == CKS_RW_USER_FUNCTIONS))
+		rv = CKR_USER_NOT_LOGGED_IN;
+
+	if (!rv)
+		if (!(*slots)[slot]->destroyObject(hObject))
+			rv = CKR_DEVICE_ERROR;
 
 	LOG_RETURNCODE(rv);
 
@@ -220,6 +238,7 @@ CK_RV C_SetAttributeValue(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject, 
 
 	return rv;
 }
+// </editor-fold>
 
 CK_RV C_FindObjectsInit(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
@@ -227,8 +246,23 @@ CK_RV C_FindObjectsInit(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, 
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	int slot = getSlotBySession(hSession);
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && findResults)
+		rv = CKR_OPERATION_ACTIVE;
+
+	if (!rv)
+		if (!(*slots)[slot]->findObjects(pTemplate, ulCount, &findResults, &resultLen))
+			rv = CKR_DEVICE_ERROR;
+
+	if (!rv)
+		nextResult = 0;
+	else
+		if (findResults) delete findResults;
 
 	LOG_RETURNCODE(rv);
 
@@ -241,8 +275,32 @@ CK_RV C_FindObjects(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE_PTR phObject, C
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	int slot = getSlotBySession(hSession);
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && !findResults)
+		rv = CKR_OPERATION_NOT_INITIALIZED;
+	if (!rv && !phObject)
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && !ulMaxObjectCount)
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && !pulObjectCount)
+		rv = CKR_ARGUMENTS_BAD;
+
+	if (!rv)
+	{
+		*pulObjectCount = ulMaxObjectCount;
+
+		if (resultLen - nextResult < *pulObjectCount)
+			*pulObjectCount = resultLen - nextResult;
+
+		memcpy(phObject, &findResults[nextResult], *pulObjectCount * sizeof (CK_OBJECT_HANDLE));
+
+		nextResult += *pulObjectCount;
+	}
 
 	LOG_RETURNCODE(rv);
 
@@ -255,8 +313,22 @@ CK_RV C_FindObjectsFinal(CK_SESSION_HANDLE hSession)
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	int slot = getSlotBySession(hSession);
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && !findResults)
+		rv = CKR_OPERATION_NOT_INITIALIZED;
+
+	if (!rv)
+	{
+		if (findResults) delete [] findResults;
+		findResults = NULL;
+		nextResult = 0;
+		resultLen = 0;
+	}
 
 	LOG_RETURNCODE(rv);
 
@@ -1785,7 +1857,7 @@ CK_RV applyPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaul
 
 CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
-	
+
 
 	CK_RV rv = CKR_OK;
 

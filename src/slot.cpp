@@ -345,3 +345,19 @@ bool slot::createObject(CK_SESSION_HANDLE handle, std::map<CK_ATTRIBUTE_TYPE, CK
 	else
 		return false;
 }
+
+bool slot::destroyObject(CK_OBJECT_HANDLE hObject)
+{
+	if (isTokenPresent())
+		return t->destroyObject(hObject);
+	else
+		return false;
+}
+
+bool slot::findObjects(CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR* results, unsigned int* resultsLen)
+{
+	if (isTokenPresent())
+		return t->findObjects(pTemplate, ulCount, results, resultsLen);
+	else
+		return false;
+}

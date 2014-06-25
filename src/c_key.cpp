@@ -33,6 +33,14 @@ bool populateDefaultGeneratePubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIB
 bool populateDefaultGeneratePrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* dest, const CK_MECHANISM_TYPE mechType);
 bool mapAttribute(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* dest, const CK_ATTRIBUTE src);
 
+// eventually these should replace the above, to be similar to the create object template creation
+//static void generateDefaultPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+//static void generateDefaultPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+//static void generateDefaultSecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
+//static CK_RV applyPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+//static CK_RV applyPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+//static CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount);
+
 CK_RV C_GenerateKey(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey)
 {
 	LOG_INSTANCE(NULL);

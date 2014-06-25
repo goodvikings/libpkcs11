@@ -20,7 +20,7 @@ extern mechanisms* mechs;
 
 extern int getSlotBySession(CK_SESSION_HANDLE hSession);
 
-EVP_CIPHER_CTX* ctx = NULL;
+static EVP_CIPHER_CTX* ctx = NULL;
 
 CK_RV C_EncryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_OBJECT_HANDLE hKey)
 {

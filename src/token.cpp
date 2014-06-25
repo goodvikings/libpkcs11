@@ -13,6 +13,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <sqlite3.h>
+#include <string>
 #include "p11.h"
 #include "session.h"
 #include "token.h"
@@ -1119,7 +1120,7 @@ bool token::createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, 
 		{
 			if (iter->first == CKA_VALUE)
 				continue;
-			
+
 			rc = sqlite3_prepare_v2(db, "insert into objectAttributes(handle, type, data) values (?,?,?);", -1, &stmt, NULL);
 
 			if (!rc)
@@ -1138,4 +1139,117 @@ bool token::createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, 
 	}
 
 	return rv;
+}
+
+bool token::destroyObject(CK_OBJECT_HANDLE hObject)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+	const char* query = "delete from objectAttributes where handle=?;"
+			"delete from objects where handle=?;";
+	const char** queryPtr = &query;
+
+	rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hObject);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+		sqlite3_finalize(stmt);
+
+	if (rc == SQLITE_DONE)
+		rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, hObject);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+		sqlite3_finalize(stmt);
+
+	return rc == SQLITE_DONE;
+}
+
+bool token::findObjects(CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR* results, unsigned int* resultsLen)
+{
+	int rc = SQLITE_OK;
+	char* WHERE = new char[7];
+	char* AND = new char[5];
+	sqlite3_stmt *stmt = NULL;
+	std::string query;
+	int loc = 0;
+
+	// first get the count
+	strncpy(WHERE, "where ", 7);
+	AND[0] = 0;
+	query = "select count(distinct(handle)) from objectAttributes ";
+
+	for (unsigned int i = 0; i < ulCount; i++)
+	{
+		query += WHERE;
+		query += AND;
+
+		if (!i)
+		{
+			WHERE[0] = 0;
+			strncpy(AND, "and ", 5);
+		}
+
+		query += "handle in (select handle from objectAttributes where type=? and data=?) ";
+	}
+
+	rc = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, NULL);
+
+	for (unsigned int i = 0; i < ulCount && !rc; i++)
+	{
+		rc = sqlite3_bind_int(stmt, 2 * i + 1, pTemplate[i].type);
+		if (!rc)
+			rc = sqlite3_bind_blob(stmt, 2 * i + 2, pTemplate[i].pValue, pTemplate[i].ulValueLen, NULL);
+	}
+
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW)
+	{
+		rc = SQLITE_OK;
+		*resultsLen = sqlite3_column_int(stmt, 0);
+		*results = new CK_OBJECT_HANDLE[*resultsLen];
+	}
+
+	sqlite3_finalize(stmt);
+
+	// we have the count, now we want the actual values
+	if (!rc)
+	{
+		query.replace(7, 23, "distinct(handle)");
+
+		rc = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, NULL);
+
+		for (unsigned int i = 0; i < ulCount && !rc; i++)
+		{
+			rc = sqlite3_bind_int(stmt, 2 * i + 1, pTemplate[i].type);
+			if (!rc)
+				rc = sqlite3_bind_blob(stmt, 2 * i + 2, pTemplate[i].pValue, pTemplate[i].ulValueLen, NULL);
+		}
+	}
+
+	if (!rc)
+	{
+		rc = sqlite3_step(stmt);
+		
+		while (rc == SQLITE_ROW)
+		{
+			(*results)[loc] = sqlite3_column_int(stmt, 0);
+
+			loc++;
+			rc = sqlite3_step(stmt);
+		}
+	}
+	
+	sqlite3_finalize(stmt);
+
+	delete [] WHERE;
+	delete [] AND;
+
+	return true;
 }
