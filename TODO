@@ -1,0 +1,33 @@
+----- Function definitions
+
+C_WrapKey
+C_UnwrapKey
+C_CopyObject
+C_GetObjectSize
+C_GetAttributeValue
+C_SetAttributeValue
+C_SignInit
+C_Sign
+C_SignUpdate
+C_SignFinal
+C_SignRecoverInit
+C_SignRecover
+C_VerifyInit
+C_Verify
+C_VerifyUpdate
+C_VerifyFinal
+C_VerifyRecoverInit
+C_VerifyRecover
+
+* probably won't do / leave unsupported
+C_DigestEncryptUpdate
+C_DecryptDigestUpdate
+C_SignEncryptUpdate
+C_DecryptVerifyUpdate
+C_DeriveKey
+C_GetFunctionStatus
+C_CancelFunction
+
+----- Other
+
+Redo the template generation and application of key generation to match that of object creation
