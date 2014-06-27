@@ -23,7 +23,6 @@ static CK_OBJECT_HANDLE_PTR findResults = NULL;
 static unsigned int nextResult = 0;
 static unsigned int resultLen = 0;
 
-// <editor-fold defaultstate="collapsed" desc="collapse!">
 static void generateDefaultDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
 static void generateDefaultX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
 static void generateDefaultX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate);
@@ -238,7 +237,6 @@ CK_RV C_SetAttributeValue(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject, 
 
 	return rv;
 }
-// </editor-fold>
 
 CK_RV C_FindObjectsInit(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
@@ -334,8 +332,6 @@ CK_RV C_FindObjectsFinal(CK_SESSION_HANDLE hSession)
 
 	return rv;
 }
-
-// <editor-fold defaultstate="collapsed" desc="template creation and application">
 
 void generateDefaultDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
@@ -1919,4 +1915,3 @@ CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* default
 
 	return rv;
 }
-// </editor-fold>

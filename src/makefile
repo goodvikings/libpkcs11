@@ -54,6 +54,6 @@ $(DIST):
 clean:
 	rm -rf $(BUILD) $(DIST)
 install:
-	install $(DIST)/prog /usr/local/bin/
+	install $(DIST)/$(OUTPUT) /usr/local/bin/
 love:
 	@echo Not war
