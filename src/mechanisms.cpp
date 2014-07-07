@@ -734,7 +734,8 @@ bool mechanisms::isSupportedAsymKeyType(CK_KEY_TYPE keyType)
 
 bool mechanisms::getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_PTR* mechs, int* len)
 {
-	switch (keyType) {
+	switch (keyType)
+	{
 	case CKK_DES:
 		*len = 4;
 		*mechs = new CK_MECHANISM_TYPE[*len];
@@ -807,7 +808,8 @@ unsigned int mechanisms::requiredIVSizeForMechanism(CK_MECHANISM_TYPE mech)
 {
 	unsigned int rv = 0;
 
-	switch (mech) {
+	switch (mech)
+	{
 	case CKM_DES_CBC:
 	case CKM_DES_CBC_PAD:
 	case CKM_DES3_CBC:

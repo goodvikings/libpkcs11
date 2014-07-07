@@ -58,7 +58,8 @@ CK_RV C_DigestInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism)
 	{
 		int evprv = 0;
 
-		switch (pMechanism->mechanism) {
+		switch (pMechanism->mechanism)
+		{
 		case CKM_MD5:
 			evprv = EVP_DigestInit_ex(md, EVP_md5(), NULL);
 			break;
@@ -185,7 +186,7 @@ CK_RV C_DigestKey(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hKey)
 		rv = C_DigestUpdate(hSession, (CK_BYTE_PTR) buff, buffLen);
 
 	if (buff) delete [] buff;
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;

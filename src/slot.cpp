@@ -14,11 +14,13 @@
 #include "slot.h"
 #include "token.h"
 
+extern std::vector<slot*>* slots;
+
 std::vector<slot*>* slots = NULL;
 
-slot::slot(CK_SLOT_ID id)
+slot::slot(CK_SLOT_ID aId)
 {
-	this->id = id;
+	this->id = aId;
 	t = NULL;
 	sessions = new std::vector<CK_SESSION_HANDLE > ();
 }
@@ -56,7 +58,7 @@ CK_RV slot::getTokenInfo(CK_TOKEN_INFO_PTR pInfo)
 {
 	CK_RV rv = CKR_OK;
 	unsigned char* buff = NULL;
-	int i = 0;
+	unsigned int i = 0;
 
 	if (!pInfo)
 		return CKR_ARGUMENTS_BAD;
@@ -130,22 +132,22 @@ CK_RV slot::getTokenInfo(CK_TOKEN_INFO_PTR pInfo)
 		pInfo->ulFreePrivateMemory = CK_UNAVAILABLE_INFORMATION;
 
 	if (!rv && !t->getHWVerMajor(&i))
-		pInfo->hardwareVersion.major = i;
+		pInfo->hardwareVersion.major = (unsigned char) i;
 	else
 		rv = CKR_DEVICE_ERROR;
 
 	if (!rv && !t->getHWVerMinor(&i))
-		pInfo->hardwareVersion.minor = i;
+		pInfo->hardwareVersion.minor = (unsigned char) i;
 	else
 		rv = CKR_DEVICE_ERROR;
 
 	if (!rv && !t->getFWVerMajor(&i))
-		pInfo->firmwareVersion.major = i;
+		pInfo->firmwareVersion.major = (unsigned char) i;
 	else
 		rv = CKR_DEVICE_ERROR;
 
 	if (!rv && !t->getFWVerMinor(&i))
-		pInfo->firmwareVersion.minor = i;
+		pInfo->firmwareVersion.minor = (unsigned char) i;
 	else
 		rv = CKR_DEVICE_ERROR;
 
@@ -191,7 +193,7 @@ bool slot::getTokenFlags(CK_FLAGS* flags)
 CK_SESSION_HANDLE slot::openSession(CK_FLAGS f)
 {
 	if (!isTokenPresent())
-		return -1;
+		return 0;
 	else
 	{
 		CK_SESSION_HANDLE h = t->openSession(id, f);
@@ -282,18 +284,18 @@ CK_RV slot::setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR_
 		return CKR_TOKEN_NOT_PRESENT;
 }
 
-CK_RV slot::generateKey(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey)
+CK_RV slot::generateKey(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_OBJECT_HANDLE_PTR phKey)
 {
 	if (isTokenPresent())
-		return t->generateKey(hSession, pTemplate, ulCount, phKey);
+		return t->generateKey(hSession, defaultTemplate, phKey);
 	else
 		return CKR_TOKEN_NOT_PRESENT;
 }
 
-CK_RV slot::generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey)
+CK_RV slot::generateKeyPair(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* publicKeyTemplate, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* privateKeyTemplate, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey)
 {
 	if (isTokenPresent())
-		return t->generateKeyPair(hSession, pMechanism, pPublicKeyTemplate, ulPublicKeyAttributeCount, pPrivateKeyTemplate, ulPrivateKeyAttributeCount, phPublicKey, phPrivateKey);
+		return t->generateKeyPair(hSession, publicKeyTemplate, privateKeyTemplate, phPublicKey, phPrivateKey);
 	else
 		return CKR_TOKEN_NOT_PRESENT;
 }

@@ -27,7 +27,7 @@ CK_RV C_GetSlotList(CK_BBOOL tokenPresent, CK_SLOT_ID_PTR pSlotList, CK_ULONG_PT
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
-	unsigned long slotCount;
+	unsigned long slotCount = 0;
 
 	// check if initialized
 	if (!cryptokiInitialized)

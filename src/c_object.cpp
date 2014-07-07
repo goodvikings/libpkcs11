@@ -333,7 +333,7 @@ CK_RV C_FindObjectsFinal(CK_SESSION_HANDLE hSession)
 	return rv;
 }
 
-void generateDefaultDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
+static void generateDefaultDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
 	/**
 	 Attributes:
@@ -411,7 +411,7 @@ void generateDefaultDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* 
 	(*defaultTemplate)[CKA_VALUE]->pValue = NULL;
 }
 
-void generateDefaultX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
+static void generateDefaultX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
 	/**
 	 Attributes:
@@ -581,7 +581,7 @@ void generateDefaultX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* 
 	memcpy((*defaultTemplate)[CKA_JAVA_MIDP_SECURITY_DOMAIN]->pValue, &ul, (*defaultTemplate)[CKA_JAVA_MIDP_SECURITY_DOMAIN]->ulValueLen);
 }
 
-void generateDefaultX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
+static void generateDefaultX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
 	/**
 	 Attributes:
@@ -722,7 +722,7 @@ void generateDefaultX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PT
 	(*defaultTemplate)[CKA_VALUE]->pValue = NULL;
 }
 
-void generateDefaultWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
+static void generateDefaultWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
 	/**
 	 Attributes:
@@ -870,7 +870,7 @@ void generateDefaultWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* 
 	(*defaultTemplate)[CKA_HASH_OF_ISSUER_PUBLIC_KEY]->pValue = NULL;
 }
 
-void generateDefaultPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
+static void generateDefaultPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
 	/**
 	 Attributes:
@@ -901,12 +901,15 @@ void generateDefaultPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>
 		CKA_TRUSTED - read only
 		CKA_WRAP_TEMPLATE - default empty
 	 [Other]
-		CKA_VALUE - required
+		CKA_MODULUS - required
+		CKA_MODULUS_BITS - read only
+		CKA_PUBLIC_EXPONENT - required
 	 */
 
 	CK_OBJECT_CLASS objClass = CKO_PUBLIC_KEY;
 	CK_BBOOL b = CK_TRUE;
 	CK_KEY_TYPE keyType = CKK_RSA;
+	CK_ULONG modLen = 0;
 
 	// CKA_CLASS -> CKO_DATA
 	(*defaultTemplate)[CKA_CLASS] = new CK_ATTRIBUTE;
@@ -1050,14 +1053,27 @@ void generateDefaultPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>
 	(*defaultTemplate)[CKA_WRAP_TEMPLATE]->ulValueLen = 0;
 	(*defaultTemplate)[CKA_WRAP_TEMPLATE]->pValue = NULL;
 
-	// CKA_VALUE - required
-	(*defaultTemplate)[CKA_WRAP_TEMPLATE] = new CK_ATTRIBUTE;
-	(*defaultTemplate)[CKA_WRAP_TEMPLATE]->type = CKA_WRAP_TEMPLATE;
-	(*defaultTemplate)[CKA_WRAP_TEMPLATE]->ulValueLen = 0;
-	(*defaultTemplate)[CKA_WRAP_TEMPLATE]->pValue = NULL;
+	// CKA_MODULUS - required
+	(*defaultTemplate)[CKA_MODULUS] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_MODULUS]->type = CKA_MODULUS;
+	(*defaultTemplate)[CKA_MODULUS]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_MODULUS]->pValue = NULL;
+
+	// CKA_MODULUS_BITS - read only
+	(*defaultTemplate)[CKA_MODULUS_BITS] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_MODULUS_BITS]->type = CKA_MODULUS_BITS;
+	(*defaultTemplate)[CKA_MODULUS_BITS]->ulValueLen = sizeof (modLen);
+	(*defaultTemplate)[CKA_MODULUS_BITS]->pValue = new unsigned char*[sizeof (modLen)];
+	memcpy((*defaultTemplate)[CKA_MODULUS_BITS]->pValue, &modLen, (*defaultTemplate)[CKA_MODULUS_BITS]->ulValueLen);
+
+	// CKA_PUBLIC_EXPONENT - required
+	(*defaultTemplate)[CKA_PUBLIC_EXPONENT] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_PUBLIC_EXPONENT]->type = CKA_PUBLIC_EXPONENT;
+	(*defaultTemplate)[CKA_PUBLIC_EXPONENT]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_PUBLIC_EXPONENT]->pValue = NULL;
 }
 
-void generateDefaultPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
+static void generateDefaultPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
 	/**
 	 Attributes:
@@ -1093,7 +1109,14 @@ void generateDefaultPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR
 		CKA_UNWRAP_TEMPLATE - default empty
 		CKA_ALWAYS_AUTHENTICATE - default false
 	 [Other]
-		CKA_VALUE - required
+		CKA_MODULUS - required
+		CKA_PUBLIC_EXPONENT - optional
+		CKA_PRIVATE_EXPONENT - required
+		CKA_PRIME_1 - optional
+		CKA_PRIME_2 - optional
+		CKA_EXPONENT_1 - optional
+		CKA_EXPONENT_2 - optional
+		CKA_COEFFICIENT - optional
 	 */
 
 	CK_OBJECT_CLASS objClass = CKO_PRIVATE_KEY;
@@ -1281,9 +1304,57 @@ void generateDefaultPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR
 	(*defaultTemplate)[CKA_ALWAYS_AUTHENTICATE]->ulValueLen = sizeof (b);
 	(*defaultTemplate)[CKA_ALWAYS_AUTHENTICATE]->pValue = new unsigned char*[sizeof (b)];
 	memcpy((*defaultTemplate)[CKA_ALWAYS_AUTHENTICATE]->pValue, &b, (*defaultTemplate)[CKA_ALWAYS_AUTHENTICATE]->ulValueLen);
+
+	// CKA_MODULUS - required
+	(*defaultTemplate)[CKA_MODULUS] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_MODULUS]->type = CKA_MODULUS;
+	(*defaultTemplate)[CKA_MODULUS]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_MODULUS]->pValue = NULL;
+
+	// CKA_PUBLIC_EXPONENT - optional
+	(*defaultTemplate)[CKA_PUBLIC_EXPONENT] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_PUBLIC_EXPONENT]->type = CKA_PUBLIC_EXPONENT;
+	(*defaultTemplate)[CKA_PUBLIC_EXPONENT]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_PUBLIC_EXPONENT]->pValue = NULL;
+
+	// CKA_PRIVATE_EXPONENT - required
+	(*defaultTemplate)[CKA_PRIVATE_EXPONENT] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_PRIVATE_EXPONENT]->type = CKA_PRIVATE_EXPONENT;
+	(*defaultTemplate)[CKA_PRIVATE_EXPONENT]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_PRIVATE_EXPONENT]->pValue = NULL;
+
+	// CKA_PRIME_1 - optional
+	(*defaultTemplate)[CKA_PRIME_1] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_PRIME_1]->type = CKA_PRIME_1;
+	(*defaultTemplate)[CKA_PRIME_1]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_PRIME_1]->pValue = NULL;
+
+	// CKA_PRIME_2 - optional
+	(*defaultTemplate)[CKA_PRIME_2] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_PRIME_2]->type = CKA_PRIME_2;
+	(*defaultTemplate)[CKA_PRIME_2]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_PRIME_2]->pValue = NULL;
+
+	// CKA_EXPONENT_1 - optional
+	(*defaultTemplate)[CKA_EXPONENT_1] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_EXPONENT_1]->type = CKA_EXPONENT_1;
+	(*defaultTemplate)[CKA_EXPONENT_1]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_EXPONENT_1]->pValue = NULL;
+
+	// CKA_EXPONENT_2 - optional
+	(*defaultTemplate)[CKA_EXPONENT_2] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_EXPONENT_2]->type = CKA_EXPONENT_2;
+	(*defaultTemplate)[CKA_EXPONENT_2]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_EXPONENT_2]->pValue = NULL;
+
+	// CKA_COEFFICIENT - optional
+	(*defaultTemplate)[CKA_COEFFICIENT] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_COEFFICIENT]->type = CKA_COEFFICIENT;
+	(*defaultTemplate)[CKA_COEFFICIENT]->ulValueLen = 0;
+	(*defaultTemplate)[CKA_COEFFICIENT]->pValue = NULL;
 }
 
-void generateDefaultSecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
+static void generateDefaultSecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
 	/**
 	 Attributes:
@@ -1323,11 +1394,13 @@ void generateDefaultSecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>
 		CKA_UNWRAP_TEMPLATE - default empty
 	 [Other]
 		CKA_VALUE - required
+		CKA_VALUE_LEN - read only
 	 */
 
 	CK_OBJECT_CLASS objClass = CKO_PRIVATE_KEY;
 	CK_BBOOL b = CK_TRUE;
 	CK_KEY_TYPE keyType = CKK_RSA;
+	CK_ULONG len = 0;
 
 	// CKA_CLASS -> CKO_PRIVATE_KEY
 	(*defaultTemplate)[CKA_CLASS] = new CK_ATTRIBUTE;
@@ -1538,17 +1611,26 @@ void generateDefaultSecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>
 	(*defaultTemplate)[CKA_VALUE]->type = CKA_VALUE;
 	(*defaultTemplate)[CKA_VALUE]->ulValueLen = 0;
 	(*defaultTemplate)[CKA_VALUE]->pValue = NULL;
+
+	//CKA_VALUE_LEN - read only
+	(*defaultTemplate)[CKA_VALUE_LEN] = new CK_ATTRIBUTE;
+	(*defaultTemplate)[CKA_VALUE_LEN]->type = CKA_VALUE_LEN;
+	(*defaultTemplate)[CKA_VALUE_LEN]->ulValueLen = sizeof (len);
+	(*defaultTemplate)[CKA_VALUE_LEN]->pValue = new unsigned char*[sizeof (len)];
+	memcpy((*defaultTemplate)[CKA_VALUE_LEN]->pValue, &len, (*defaultTemplate)[CKA_VALUE_LEN]->ulValueLen);
 }
 
-CK_RV applyDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
+static CK_RV applyDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
 	CK_RV rv = CKR_OK;
+	int reqCount = 0;
 
 	for (unsigned int i = 0; i < ulCount && !rv; i++)
 	{
 		switch (pTemplate[i].type)
 		{
 		case CKA_VALUE:
+			reqCount++;
 			if (!pTemplate[i].pValue)
 				rv = CKR_ATTRIBUTE_VALUE_INVALID;
 			break;
@@ -1574,12 +1656,16 @@ CK_RV applyDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTe
 		}
 	}
 
+	if (!rv && reqCount != 1)
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
 	return rv;
 }
 
-CK_RV applyX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
+static CK_RV applyX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
 	CK_RV rv = CKR_OK;
+	int reqCount = 0;
 
 	for (unsigned int i = 0; i < ulCount && !rv; i++)
 	{
@@ -1589,6 +1675,7 @@ CK_RV applyX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTe
 		case CKA_CERTIFICATE_TYPE:
 		case CKA_SUBJECT:
 			// required attributes
+			reqCount++;
 			if (!pTemplate[i].pValue)
 				rv = CKR_ATTRIBUTE_VALUE_INVALID;
 			break;
@@ -1629,12 +1716,16 @@ CK_RV applyX509Template(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTe
 		}
 	}
 
+	if (!rv && reqCount != 3)
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
 	return rv;
 }
 
-CK_RV applyX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
+static CK_RV applyX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
 	CK_RV rv = CKR_OK;
+	int reqCount = 0;
 
 	for (unsigned int i = 0; i < ulCount && !rv; i++)
 	{
@@ -1644,6 +1735,7 @@ CK_RV applyX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defau
 		case CKA_CERTIFICATE_TYPE:
 		case CKA_OWNER:
 			// required attributes
+			reqCount++;
 			if (!pTemplate[i].pValue)
 				rv = CKR_ATTRIBUTE_VALUE_INVALID;
 			break;
@@ -1680,12 +1772,16 @@ CK_RV applyX509AttrTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defau
 		}
 	}
 
+	if (!rv && reqCount != 3)
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
 	return rv;
 }
 
-CK_RV applyWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
+static CK_RV applyWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
 	CK_RV rv = CKR_OK;
+	int reqCount = 0;
 
 	for (unsigned int i = 0; i < ulCount && !rv; i++)
 	{
@@ -1694,6 +1790,7 @@ CK_RV applyWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTe
 		case CKA_VALUE:
 		case CKA_CERTIFICATE_TYPE:
 		case CKA_SUBJECT:
+			reqCount++;
 			// required attributes
 			if (!pTemplate[i].pValue)
 				rv = CKR_ATTRIBUTE_VALUE_INVALID;
@@ -1732,18 +1829,25 @@ CK_RV applyWTLSTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTe
 		}
 	}
 
+	if (!rv && reqCount != 3)
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
 	return rv;
 }
 
-CK_RV applyPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
+static CK_RV applyPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
 	CK_RV rv = CKR_OK;
+	int reqCount = 0;
 
 	for (unsigned int i = 0; i < ulCount && !rv; i++)
 	{
 		switch (pTemplate[i].type)
 		{
 		case CKA_KEY_TYPE:
+		case CKA_MODULUS:
+		case CKA_PUBLIC_EXPONENT:
+			reqCount++;
 			// required attributes
 			if (!pTemplate[i].pValue)
 				rv = CKR_ATTRIBUTE_VALUE_INVALID;
@@ -1751,8 +1855,7 @@ CK_RV applyPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* default
 		case CKA_LOCAL:
 		case CKA_KEY_GEN_MECHANISM:
 		case CKA_TRUSTED:
-		case CKA_VALUE:
-			// read only attributes
+		case CKA_MODULUS_BITS:
 			rv = CKR_ATTRIBUTE_READ_ONLY;
 			break;
 		case CKA_CLASS:
@@ -1788,20 +1891,32 @@ CK_RV applyPubKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* default
 		}
 	}
 
+	if (!rv && reqCount != 3)
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
+	// apply read only values that do not have suitable defaults
+	if (!rv)
+	{
+		*(CK_ULONG*) (*defaultTemplate)[CKA_MODULUS_BITS]->pValue = (*defaultTemplate)[CKA_MODULUS]->ulValueLen * 8;
+	}
+
 	return rv;
 }
 
-CK_RV applyPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
+static CK_RV applyPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
 	CK_RV rv = CKR_OK;
+	int reqCount = 0;
 
 	for (unsigned int i = 0; i < ulCount && !rv; i++)
 	{
 		switch (pTemplate[i].type)
 		{
 		case CKA_KEY_TYPE:
-		case CKA_VALUE:
+		case CKA_MODULUS:
+		case CKA_PRIVATE_EXPONENT:
 			// required attributes
+			reqCount++;
 			if (!pTemplate[i].pValue)
 				rv = CKR_ATTRIBUTE_VALUE_INVALID;
 			break;
@@ -1832,6 +1947,12 @@ CK_RV applyPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaul
 		case CKA_WRAP_WITH_TRUSTED:
 		case CKA_UNWRAP_TEMPLATE:
 		case CKA_ALWAYS_AUTHENTICATE:
+		case CKA_PUBLIC_EXPONENT:
+		case CKA_PRIME_1:
+		case CKA_PRIME_2:
+		case CKA_EXPONENT_1:
+		case CKA_EXPONENT_2:
+		case CKA_COEFFICIENT:
 			// optional attributes
 			break;
 		default:
@@ -1848,14 +1969,16 @@ CK_RV applyPrivKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaul
 		}
 	}
 
+	if (!rv && reqCount != 3) // check that magic number
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
 	return rv;
 }
 
-CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
+static CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
-
-
 	CK_RV rv = CKR_OK;
+	int reqCount = 0;
 
 	for (unsigned int i = 0; i < ulCount && !rv; i++)
 	{
@@ -1863,6 +1986,7 @@ CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* default
 		{
 		case CKA_KEY_TYPE:
 		case CKA_VALUE:
+			reqCount++;
 			// required attributes
 			if (!pTemplate[i].pValue)
 				rv = CKR_ATTRIBUTE_VALUE_INVALID;
@@ -1871,6 +1995,7 @@ CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* default
 		case CKA_KEY_GEN_MECHANISM:
 		case CKA_ALWAYS_SENSITIVE:
 		case CKA_NEVER_EXTRACTABLE:
+		case CKA_VALUE_LEN:
 			// read only attributes
 			rv = CKR_ATTRIBUTE_READ_ONLY;
 			break;
@@ -1911,6 +2036,15 @@ CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* default
 			(*defaultTemplate)[pTemplate[i].type]->pValue = new unsigned char[pTemplate[i].ulValueLen];
 			memcpy((*defaultTemplate)[pTemplate[i].type]->pValue, pTemplate[i].pValue, pTemplate[i].ulValueLen);
 		}
+	}
+
+	if (!rv && reqCount != 3)
+		rv = CKR_TEMPLATE_INCOMPLETE;
+
+	// apply read only values that do not have suitable defaults
+	if (!rv)
+	{
+		*(CK_ULONG*) (*defaultTemplate)[CKA_VALUE_LEN]->pValue = (*defaultTemplate)[CKA_VALUE]->ulValueLen;
 	}
 
 	return rv;

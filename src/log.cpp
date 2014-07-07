@@ -104,7 +104,8 @@ const char* logger::convertReturnVode(const CK_RV rv) const
 {
 	const char* rc = NULL;
 
-	switch (rv) {
+	switch (rv)
+	{
 	case CKR_OK:
 		rc = "CKR_OK";
 		break;

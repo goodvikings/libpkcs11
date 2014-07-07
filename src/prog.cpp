@@ -7,6 +7,11 @@
  * ------------------------------------------------------------------------------
  */
 
+/*
+ * This is just a testing driver for the library. To build the library, use
+ * makefile.shared which leaves this out and builds a .so file.
+ */
+
 #include <iostream>
 #include <assert.h>
 #include <stdlib.h>
@@ -39,10 +44,6 @@ int main(int argc, char** argv)
 	assert(C_Login(hSession, CKU_USER, (unsigned char*) "11223344", 8) == CKR_OK);
 
 
-
-
-
-
 	assert(C_Finalize(NULL_PTR) == CKR_OK);
 
 	delete [] pSlotID;
@@ -54,14 +55,18 @@ void generateKey(CK_SESSION_HANDLE_PTR phSession, CK_OBJECT_HANDLE_PTR pHandle)
 {
 	CK_MECHANISM mech ={CKM_AES_KEY_GEN, NULL, 0};
 	CK_OBJECT_CLASS objclass = CKO_SECRET_KEY;
-	CK_BBOOL f = false;
+	CK_BBOOL f = true;
+	CK_KEY_TYPE keyType = CKK_AES;
+	CK_ULONG valueLen = 32;
 
 	CK_ATTRIBUTE temp[] ={
 		{CKA_CLASS, &objclass, sizeof (objclass)},
-		{CKA_TOKEN, &f, sizeof (f)}
+		{CKA_TOKEN, &f, sizeof (f)},
+		{CKA_KEY_TYPE, &keyType, sizeof (keyType)},
+		{CKA_VALUE_LEN, &valueLen, sizeof (valueLen)}
 	};
 
-	assert(C_GenerateKey(*phSession, &mech, temp, 2, pHandle) == CKR_OK);
+	assert(C_GenerateKey(*phSession, &mech, temp, sizeof (temp) / sizeof (CK_ATTRIBUTE), pHandle) == CKR_OK);
 }
 
 void encrypt(CK_SESSION_HANDLE_PTR phSession, CK_OBJECT_HANDLE_PTR pHandle)
@@ -104,7 +109,7 @@ void generateKeyPair(CK_SESSION_HANDLE_PTR phSession)
 	CK_OBJECT_HANDLE hPrivKey;
 	CK_MECHANISM mech ={CKM_RSA_PKCS_KEY_PAIR_GEN, NULL, 0};
 	CK_BBOOL t = CK_TRUE;
-	CK_KEY_TYPE pubKeyType = CKK_RSA;
+	CK_KEY_TYPE keyType = CKK_RSA;
 	CK_BYTE exp[] ={0x01, 0x00, 0x01};
 	CK_ULONG modBits = 2048;
 
@@ -112,13 +117,14 @@ void generateKeyPair(CK_SESSION_HANDLE_PTR phSession)
 		{CKA_ENCRYPT, &t, sizeof (t)},
 		{CKA_VERIFY, &t, sizeof (t)},
 		{CKA_WRAP, &t, sizeof (t)},
-		{CKA_KEY_TYPE, &pubKeyType, sizeof (pubKeyType)},
+		{CKA_KEY_TYPE, &keyType, sizeof (keyType)},
 		{CKA_PUBLIC_EXPONENT, exp, sizeof (exp)},
 		{CKA_MODULUS_BITS, &modBits, sizeof (modBits)},
 		{CKA_TOKEN, &t, sizeof (t)}
 	};
 
 	CK_ATTRIBUTE privTemplate[] ={
+		{CKA_KEY_TYPE, &keyType, sizeof (keyType)},
 		{CKA_PRIVATE, &t, sizeof (t)},
 		{CKA_SENSITIVE, &t, sizeof (t)},
 		{CKA_DECRYPT, &t, sizeof (t)},

@@ -43,15 +43,15 @@ token::~token()
 	if (db) sqlite3_close_v2(db);
 }
 
-bool token::open(const char* filename)
+bool token::open(const char* aFilename)
 {
 	const char header[16] ={0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20, 0x33, 0x00};
 	char buff[16];
 	int rc = 0;
 
-	strncpy(this->filename, filename, TOKENFILENAMELEN);
+	strncpy(this->filename, aFilename, TOKENFILENAMELEN);
 
-	std::ifstream fin(filename);
+	std::ifstream fin(aFilename);
 
 	if (fin.good())
 	{
@@ -59,7 +59,7 @@ bool token::open(const char* filename)
 		fin.close();
 	}
 
-	rc = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE, NULL);
+	rc = sqlite3_open_v2(aFilename, &db, SQLITE_OPEN_READWRITE, NULL);
 
 	if (!rc && !strncmp(buff, header, 16))
 		tokenInitialized = true;
@@ -122,54 +122,54 @@ CK_STATE token::getState()
 	return state;
 }
 
-bool token::getMaxSessionCount(int* i)
+bool token::getMaxSessionCount(unsigned int* i)
 {
 	return getInfoInt(i, MAXSESSIONCOUNT);
 }
 
-bool token::getMaxRWSessionCount(int* i)
+bool token::getMaxRWSessionCount(unsigned int* i)
 {
 	return getInfoInt(i, MAXRWSESSIONCOUNT);
 }
 
-bool token::getMaxPinLen(int* i)
+bool token::getMaxPinLen(unsigned int* i)
 {
 	*i = TOKENMAXPINLEN;
 	return false;
 }
 
-bool token::getMinPinLen(int* i)
+bool token::getMinPinLen(unsigned int* i)
 {
 	*i = TOKENMINPINLEN;
 	return false;
 }
 
-bool token::getTotalPubMem(int* i)
+bool token::getTotalPubMem(unsigned int* i)
 {
 	return getInfoInt(i, TOTALPUBMEM);
 }
 
-bool token::getTotalPrivMem(int* i)
+bool token::getTotalPrivMem(unsigned int* i)
 {
 	return getInfoInt(i, TOTALPRIVMEM);
 }
 
-bool token::getHWVerMajor(int* i)
+bool token::getHWVerMajor(unsigned int* i)
 {
 	return getInfoInt(i, HWVERMAJOR);
 }
 
-bool token::getHWVerMinor(int* i)
+bool token::getHWVerMinor(unsigned int* i)
 {
 	return getInfoInt(i, HWVERMINOR);
 }
 
-bool token::getFWVerMajor(int* i)
+bool token::getFWVerMajor(unsigned int* i)
 {
 	return getInfoInt(i, FWVERMAJOR);
 }
 
-bool token::getFWVerMinor(int* i)
+bool token::getFWVerMinor(unsigned int* i)
 {
 	return getInfoInt(i, FWVERMINOR);
 }
@@ -182,7 +182,7 @@ bool token::isPinInitialized()
 
 	rc = sqlite3_prepare_v2(db, "select count(*) from pin where name=? and value=?", -1, &stmt, NULL);
 	if (!rc)
-		rc = sqlite3_bind_text(stmt, 1, INITIALIZED, strnlen(INITIALIZED, 16), NULL);
+		rc = sqlite3_bind_text(stmt, 1, INITIALIZED, (int) strnlen(INITIALIZED, 16), NULL);
 	if (!rc)
 		rc = sqlite3_bind_int(stmt, 2, PININITIALIZED);
 	if (!rc)
@@ -331,7 +331,7 @@ bool token::getInfoText(unsigned char* buff, unsigned int bufflen, const char* f
 	return rc;
 }
 
-bool token::getInfoInt(int* i, const char* field)
+bool token::getInfoInt(unsigned int* i, const char* field)
 {
 	int rc = SQLITE_OK;
 	sqlite3_stmt *stmt = NULL;
@@ -669,11 +669,11 @@ CK_RV token::initUserPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen)
 {
 	CK_RV rv = CKR_OK;
 
-	int max, min;
+	unsigned int max, min;
 	getMaxPinLen(&max);
 	getMinPinLen(&min);
 
-	if ((int) ulPinLen < min || (int) ulPinLen > max)
+	if ((unsigned int) ulPinLen < min || (unsigned int) ulPinLen > max)
 		rv = CKR_PIN_LEN_RANGE;
 	if (!rv)
 	{
@@ -730,14 +730,14 @@ CK_RV token::setTokenPin(CK_UTF8CHAR_PTR pOldPin, CK_ULONG ulOldLen, CK_UTF8CHAR
 {
 	CK_RV rv = CKR_OK;
 	bool isUser = true;
-	int max, min;
+	unsigned int max, min;
 	getMaxPinLen(&max);
 	getMinPinLen(&min);
 
 	if (state == CKS_RW_SO_FUNCTIONS)
 		isUser = false;
 
-	if (!rv && ((int) ulNewLen < min || (int) ulNewLen > max))
+	if (!rv && ((unsigned int) ulNewLen < min || (unsigned int) ulNewLen > max))
 		rv = CKR_PIN_LEN_RANGE;
 	if (!rv)
 	{
@@ -782,34 +782,36 @@ int token::getNextObjectHandle()
 	return val + 1;
 }
 
-CK_RV token::generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey)
+CK_RV token::generateKey(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_OBJECT_HANDLE_PTR phKey)
 {
 	CK_RV rv = CKR_OK;
 
-	int handle = getNextObjectHandle();
+	unsigned long handle = getNextObjectHandle();
 
 	unsigned char* key = NULL;
 	int len = 0;
-	int found = 0;
 	bool persistentObject = false;
 
-	for (unsigned int i = 0; i < ulCount && found < 2; i++)
+	persistentObject = *(CK_BBOOL*) (*defaultTemplate)[CKA_TOKEN]->pValue;
+	len = *(CK_ULONG*) (*defaultTemplate)[CKA_VALUE_LEN]->pValue;
+
+	if (len == 0)
 	{
-		switch (pTemplate[i].type)
+		switch (*(CK_KEY_TYPE*) (*defaultTemplate)[CKA_KEY_TYPE]->pValue)
 		{
-		case CKA_VALUE_LEN:
-			len = *(CK_ULONG*) pTemplate[i].pValue;
-			found++;
+		case CKK_AES:
+			len = 16;
 			break;
-		case CKA_TOKEN:
-			persistentObject = *(CK_BBOOL*) pTemplate[i].pValue;
-			found++;
+		case CKK_DES:
+			len = 8;
+			break;
+		case CKK_DES3:
+			len = 24;
 			break;
 		}
-	}
 
-	if (found != 2)
-		rv = CKR_TEMPLATE_INCOMPLETE;
+		*(CK_ULONG*) (*defaultTemplate)[CKA_VALUE_LEN]->pValue = len;
+	}
 
 	if (!rv)
 	{
@@ -822,7 +824,7 @@ CK_RV token::generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate,
 			rv = CKR_DEVICE_ERROR;
 
 	if (!rv)
-		if (!saveObjectTemplate(pTemplate, ulCount, handle))
+		if (!saveObjectAttributes(&handle, defaultTemplate))
 			rv = CKR_DEVICE_ERROR;
 
 	if (key) delete [] key;
@@ -833,43 +835,27 @@ CK_RV token::generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate,
 	return rv;
 }
 
-CK_RV token::generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey)
+CK_RV token::generateKeyPair(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* publicKeyTemplate, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* privateKeyTemplate, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey)
 {
 	CK_RV rv = CKR_OK;
 
-	int pubHandle = getNextObjectHandle();
-	int privHandle = pubHandle + 1;
+	unsigned long pubHandle = getNextObjectHandle();
+	unsigned long privHandle = pubHandle + 1;
 	int exp = 0;
 	int modulusBits = 0;
-	int found = 0;
 	bool persistentObject = false;
 	RSA *rsa = NULL;
 	unsigned char* pubPEM = NULL;
-	int pubLen = 0;
 	unsigned char* privPEM = NULL;
+	int pubLen = 0;
 	int privLen = 0;
 	BIO* bio = NULL;
 
-	for (unsigned int i = 0; i < ulPublicKeyAttributeCount && found < 3; i++)
-	{
-		switch (pPublicKeyTemplate[i].type)
-		{
-		case CKA_MODULUS_BITS:
-			modulusBits = *(CK_ULONG*) pPublicKeyTemplate[i].pValue;
-			found++;
-			break;
-		case CKA_PUBLIC_EXPONENT:
-			memcpy(&exp, pPublicKeyTemplate[i].pValue, pPublicKeyTemplate[i].ulValueLen);
-			found++;
-			break;
-		case CKA_TOKEN:
-			persistentObject = *(CK_BBOOL*) pPublicKeyTemplate[i].pValue;
-			found++;
-			break;
-		}
-	}
+	modulusBits = *(CK_ULONG*) (*publicKeyTemplate)[CKA_MODULUS_BITS]->pValue;
+	memcpy(&exp, (*publicKeyTemplate)[CKA_PUBLIC_EXPONENT]->pValue, (*publicKeyTemplate)[CKA_PUBLIC_EXPONENT]->ulValueLen);
+	persistentObject = *(CK_BBOOL*) (*publicKeyTemplate)[CKA_TOKEN]->pValue;
 
-	if (found != 3)
+	if (!modulusBits || !exp)
 		rv = CKR_TEMPLATE_INCOMPLETE;
 
 	if (!rv)
@@ -917,16 +903,16 @@ CK_RV token::generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMecha
 	}
 
 	if (!rv)
-		if (!saveObject(privPEM, privLen, persistentObject ? 0 : hSession, privHandle))
-			rv = CKR_DEVICE_ERROR;
-	if (!rv)
 		if (!saveObject(pubPEM, pubLen, persistentObject ? 0 : hSession, pubHandle))
 			rv = CKR_DEVICE_ERROR;
 	if (!rv)
-		if (!saveObjectTemplate(pPrivateKeyTemplate, ulPrivateKeyAttributeCount, privHandle))
+		if (!saveObject(privPEM, privLen, persistentObject ? 0 : hSession, privHandle))
 			rv = CKR_DEVICE_ERROR;
 	if (!rv)
-		if (!saveObjectTemplate(pPublicKeyTemplate, ulPublicKeyAttributeCount, pubHandle))
+		if (!saveObjectAttributes(&pubHandle, publicKeyTemplate))
+			rv = CKR_DEVICE_ERROR;
+	if (!rv)
+		if (!saveObjectAttributes(&privHandle, privateKeyTemplate))
 			rv = CKR_DEVICE_ERROR;
 
 	if (bio) BIO_free_all(bio);
@@ -955,30 +941,6 @@ bool token::saveObject(const unsigned char* data, const int len, CK_SESSION_HAND
 		rc = sqlite3_step(stmt);
 	if (rc == SQLITE_DONE)
 		sqlite3_finalize(stmt);
-
-	return rc == SQLITE_DONE;
-}
-
-bool token::saveObjectTemplate(const CK_ATTRIBUTE_PTR pTemplate, const CK_ULONG ulCount, const int handle)
-{
-	int rc = SQLITE_OK;
-	sqlite3_stmt *stmt = NULL;
-
-	for (unsigned int i = 0; i < ulCount && (rc == SQLITE_OK || rc == SQLITE_DONE); i++)
-	{
-		rc = sqlite3_prepare_v2(db, "insert into objectAttributes(handle, type, data) values (?,?,?);", -1, &stmt, NULL);
-
-		if (!rc)
-			rc = sqlite3_bind_int(stmt, 1, handle);
-		if (!rc)
-			rc = sqlite3_bind_int(stmt, 2, pTemplate[i].type);
-		if (!rc)
-			rc = sqlite3_bind_blob(stmt, 3, pTemplate[i].pValue, pTemplate[i].ulValueLen, NULL);
-		if (!rc)
-			rc = sqlite3_step(stmt);
-		if (rc == SQLITE_DONE)
-			sqlite3_finalize(stmt);
-	}
 
 	return rc == SQLITE_DONE;
 }
@@ -1106,39 +1068,46 @@ bool token::getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_T
 bool token::createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate)
 {
 	bool rv = false;
-	int handle = getNextObjectHandle();
+	unsigned long handle = getNextObjectHandle();
 
 	rv = saveObject((unsigned char*) (*pTemplate)[CKA_VALUE]->pValue, (*pTemplate)[CKA_VALUE]->ulValueLen, *(CK_BBOOL*) (*pTemplate)[CKA_TOKEN]->pValue ? 0 : session, handle);
 
-
 	if (rv)
 	{
-		int rc = SQLITE_OK;
-		sqlite3_stmt *stmt = NULL;
-
-		for (std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>::iterator iter = pTemplate->begin(); iter != pTemplate->end(); iter++)
-		{
-			if (iter->first == CKA_VALUE)
-				continue;
-
-			rc = sqlite3_prepare_v2(db, "insert into objectAttributes(handle, type, data) values (?,?,?);", -1, &stmt, NULL);
-
-			if (!rc)
-				rc = sqlite3_bind_int(stmt, 1, handle);
-			if (!rc)
-				rc = sqlite3_bind_int(stmt, 2, iter->first);
-			if (!rc)
-				rc = sqlite3_bind_blob(stmt, 3, iter->second->pValue, iter->second->ulValueLen, NULL);
-			if (!rc)
-				rc = sqlite3_step(stmt);
-			if (rc == SQLITE_DONE)
-				sqlite3_finalize(stmt);
-		}
-
-		rv = rc == SQLITE_DONE;
+		rv = saveObjectAttributes(&handle, pTemplate);
 	}
 
 	return rv;
+}
+
+bool token::saveObjectAttributes(CK_OBJECT_HANDLE_PTR phKey, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+
+	for (std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>::iterator iter = pTemplate->begin(); iter != pTemplate->end() && !rc; iter++)
+	{
+		if (iter->first == CKA_VALUE)
+			continue;
+
+		rc = sqlite3_prepare_v2(db, "insert into objectAttributes(handle, type, data) values (?,?,?);", -1, &stmt, NULL);
+
+		if (!rc)
+			rc = sqlite3_bind_int(stmt, 1, *phKey);
+		if (!rc)
+			rc = sqlite3_bind_int(stmt, 2, iter->first);
+		if (!rc)
+			rc = sqlite3_bind_blob(stmt, 3, iter->second->pValue, iter->second->ulValueLen, NULL);
+		if (!rc)
+			rc = sqlite3_step(stmt);
+		if (rc == SQLITE_DONE)
+		{
+			rc = SQLITE_OK;
+			sqlite3_finalize(stmt);
+		}
+	}
+
+	return rc == SQLITE_OK;
 }
 
 bool token::destroyObject(CK_OBJECT_HANDLE hObject)
@@ -1236,7 +1205,7 @@ bool token::findObjects(CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_
 	if (!rc)
 	{
 		rc = sqlite3_step(stmt);
-		
+
 		while (rc == SQLITE_ROW)
 		{
 			(*results)[loc] = sqlite3_column_int(stmt, 0);
@@ -1245,7 +1214,7 @@ bool token::findObjects(CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_
 			rc = sqlite3_step(stmt);
 		}
 	}
-	
+
 	sqlite3_finalize(stmt);
 
 	delete [] WHERE;

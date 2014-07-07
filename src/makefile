@@ -52,7 +52,7 @@ $(BUILD):
 $(DIST):
 	@mkdir $(DIST)
 clean:
-	rm -rf $(BUILD) $(DIST)
+	rm -rf $(BUILD) $(DIST); clear
 install:
 	install $(DIST)/$(OUTPUT) /usr/local/bin/
 love:

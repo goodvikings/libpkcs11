@@ -25,7 +25,7 @@ public:
 	bool isSupportedSecretKeyType(CK_KEY_TYPE keyType);
 	bool isSupportedAsymKeyType(CK_KEY_TYPE keyType);
 	bool getMechanismsByKeyType(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE_PTR* mechs, int* len);
-	
+
 	bool keyValidForMechanism(CK_KEY_TYPE keyType, CK_MECHANISM_TYPE mechs);
 	unsigned int requiredIVSizeForMechanism(CK_MECHANISM_TYPE mech);
 private:

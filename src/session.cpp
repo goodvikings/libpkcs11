@@ -10,9 +10,9 @@
 #include <string.h>
 #include "session.h"
 
-session::session(CK_SESSION_HANDLE handle, CK_SLOT_ID slotID)
+session::session(CK_SESSION_HANDLE aHandle, CK_SLOT_ID slotID)
 {
-	this->handle = handle;
+	this->handle = aHandle;
 
 	pInfo = new CK_SESSION_INFO;
 
@@ -40,7 +40,7 @@ void session::setRW()
 
 void session::setRO()
 {
-	pInfo->flags &= ~CKF_RW_SESSION;
+	pInfo->flags &= ~(unsigned long) CKF_RW_SESSION;
 }
 
 void session::logout()

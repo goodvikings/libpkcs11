@@ -62,16 +62,16 @@ public:
 	bool getManID(unsigned char* buff, unsigned int bufflen);
 	bool getModel(unsigned char* buff, unsigned int bufflen);
 	bool getSerial(unsigned char* buff, unsigned int bufflen);
-	bool getMaxSessionCount(int* i);
-	bool getMaxRWSessionCount(int* i);
-	bool getMaxPinLen(int* i);
-	bool getMinPinLen(int* i);
-	bool getTotalPubMem(int* i);
-	bool getTotalPrivMem(int* i);
-	bool getHWVerMajor(int* i);
-	bool getHWVerMinor(int* i);
-	bool getFWVerMajor(int* i);
-	bool getFWVerMinor(int* i);
+	bool getMaxSessionCount(unsigned int* i);
+	bool getMaxRWSessionCount(unsigned int* i);
+	bool getMaxPinLen(unsigned int* i);
+	bool getMinPinLen(unsigned int* i);
+	bool getTotalPubMem(unsigned int* i);
+	bool getTotalPrivMem(unsigned int* i);
+	bool getHWVerMajor(unsigned int* i);
+	bool getHWVerMinor(unsigned int* i);
+	bool getFWVerMajor(unsigned int* i);
+	bool getFWVerMinor(unsigned int* i);
 
 	CK_FLAGS getFlags();
 	CK_STATE getState();
@@ -94,19 +94,19 @@ public:
 	void closeAllSessions();
 	bool isLoggedIn();
 
-	CK_RV generateKey(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR phKey);
-	CK_RV generateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_ATTRIBUTE_PTR pPublicKeyTemplate, CK_ULONG ulPublicKeyAttributeCount, CK_ATTRIBUTE_PTR pPrivateKeyTemplate, CK_ULONG ulPrivateKeyAttributeCount, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey);
+	CK_RV generateKey(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_OBJECT_HANDLE_PTR phKey);
+	CK_RV generateKeyPair(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* publicKeyTemplate, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* privateKeyTemplate, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey);
 	bool createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate);
-	
+
 	bool hasSecretKeyByHandle(CK_OBJECT_HANDLE hKey);
 	bool getObjectDataByHandle(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen);
-	
+
 	bool keyHasAttributeMatch(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void* value, int valueLen);
 	CK_KEY_TYPE getKeyTypeByHandle(CK_OBJECT_HANDLE hKey);
 	bool getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void** buff, unsigned int* buffLen);
-	
+
 	bool destroyObject(CK_OBJECT_HANDLE hObject);
-	
+
 	bool findObjects(CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR* results, unsigned int* resultsLen);
 private:
 	sqlite3 *db;
@@ -117,7 +117,7 @@ private:
 	std::map<CK_SESSION_HANDLE, session*>* sessions;
 
 	bool getInfoText(unsigned char* buff, unsigned int bufflen, const char* field);
-	bool getInfoInt(int* i, const char* field);
+	bool getInfoInt(unsigned int* i, const char* field);
 	CK_SESSION_HANDLE getNextSessionHandle();
 	bool checkPin(const unsigned char* pin, const int pinLen, bool isUser);
 	bool isPinLocked();
@@ -125,10 +125,9 @@ private:
 	bool setPin(CK_UTF8CHAR_PTR pPin, CK_ULONG ulPinLen, bool isUser);
 	void removeSessionObjects(CK_SESSION_HANDLE hSession);
 	int getNextObjectHandle();
-		
+
 	bool saveObject(const unsigned char* data, const int len, CK_SESSION_HANDLE pSession, const int handle);
-	bool saveObjectTemplate(const CK_ATTRIBUTE_PTR pTemplate, const CK_ULONG ulCount, const int handle);
+	bool saveObjectAttributes(CK_OBJECT_HANDLE_PTR phKey, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate);
 };
 
 #endif
-
