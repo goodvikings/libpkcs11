@@ -50,7 +50,7 @@ CK_RV C_EncryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_
 		rv = CKR_OPERATION_ACTIVE;
 	if (!rv && !(state == CKS_RO_USER_FUNCTIONS || state == CKS_RW_USER_FUNCTIONS))
 		rv = CKR_USER_NOT_LOGGED_IN;
-	if (!rv && !(*slots)[slot]->tokenHasSecretKeyByHandle(hKey))
+	if (!rv && !(*slots)[slot]->tokenHasObjectByHandle(hKey))
 		rv = CKR_KEY_HANDLE_INVALID;
 	if (!rv && !mechs->keyValidForMechanism((*slots)[slot]->getKeyTypeByHandle(hKey), pMechanism->mechanism))
 		rv = CKR_KEY_TYPE_INCONSISTENT;
@@ -286,7 +286,7 @@ CK_RV C_DecryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_
 		rv = CKR_OPERATION_ACTIVE;
 	if (!rv && !(state == CKS_RO_USER_FUNCTIONS || state == CKS_RW_USER_FUNCTIONS))
 		rv = CKR_USER_NOT_LOGGED_IN;
-	if (!rv && !(*slots)[slot]->tokenHasSecretKeyByHandle(hKey))
+	if (!rv && !(*slots)[slot]->tokenHasObjectByHandle(hKey))
 		rv = CKR_KEY_HANDLE_INVALID;
 	if (!rv && !mechs->keyValidForMechanism((*slots)[slot]->getKeyTypeByHandle(hKey), pMechanism->mechanism))
 		rv = CKR_KEY_TYPE_INCONSISTENT;

@@ -176,7 +176,7 @@ CK_RV C_DigestKey(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hKey)
 		rv = CKR_OPERATION_NOT_INITIALIZED;
 	if (!rv && slot == -1)
 		rv = CKR_SESSION_HANDLE_INVALID;
-	if (!rv && !(*slots)[slot]->tokenHasSecretKeyByHandle(hKey))
+	if (!rv && !(*slots)[slot]->tokenHasObjectByHandle(hKey))
 		rv = CKR_KEY_HANDLE_INVALID;
 
 	if (!rv)

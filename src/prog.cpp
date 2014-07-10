@@ -44,6 +44,9 @@ int main(int argc, char** argv)
 	assert(C_Login(hSession, CKU_USER, (unsigned char*) "11223344", 8) == CKR_OK);
 
 
+
+
+
 	assert(C_Finalize(NULL_PTR) == CKR_OK);
 
 	delete [] pSlotID;
@@ -55,7 +58,7 @@ void generateKey(CK_SESSION_HANDLE_PTR phSession, CK_OBJECT_HANDLE_PTR pHandle)
 {
 	CK_MECHANISM mech ={CKM_AES_KEY_GEN, NULL, 0};
 	CK_OBJECT_CLASS objclass = CKO_SECRET_KEY;
-	CK_BBOOL f = true;
+	CK_BBOOL f = false;
 	CK_KEY_TYPE keyType = CKK_AES;
 	CK_ULONG valueLen = 32;
 

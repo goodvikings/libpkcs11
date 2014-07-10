@@ -96,9 +96,9 @@ public:
 
 	CK_RV generateKey(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate, CK_OBJECT_HANDLE_PTR phKey);
 	CK_RV generateKeyPair(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* publicKeyTemplate, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* privateKeyTemplate, CK_OBJECT_HANDLE_PTR phPublicKey, CK_OBJECT_HANDLE_PTR phPrivateKey);
-	bool createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate);
+	bool createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate, CK_OBJECT_HANDLE_PTR phObject);
 
-	bool hasSecretKeyByHandle(CK_OBJECT_HANDLE hKey);
+	bool hasObjectByHandle(CK_OBJECT_HANDLE hKey);
 	bool getObjectDataByHandle(CK_OBJECT_HANDLE hKey, unsigned char** buff, unsigned int* buffLen);
 
 	bool keyHasAttributeMatch(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void* value, int valueLen);
@@ -106,8 +106,13 @@ public:
 	bool getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_TYPE attrType, void** buff, unsigned int* buffLen);
 
 	bool destroyObject(CK_OBJECT_HANDLE hObject);
+	CK_RV copyObject(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE handle, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG count, CK_OBJECT_HANDLE_PTR newHandle);
 
 	bool findObjects(CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_HANDLE_PTR* results, unsigned int* resultsLen);
+	bool getObjectSize(CK_OBJECT_HANDLE handle, unsigned long* size);
+
+	CK_RV getAttributeValues(CK_OBJECT_HANDLE handle, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG count);
+	CK_RV setAttributeValues(CK_OBJECT_HANDLE handle, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG count, bool isCopyingExisting);
 private:
 	sqlite3 *db;
 	char* filename;

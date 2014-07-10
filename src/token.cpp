@@ -915,6 +915,12 @@ CK_RV token::generateKeyPair(CK_SESSION_HANDLE hSession, std::map<CK_ATTRIBUTE_T
 		if (!saveObjectAttributes(&privHandle, privateKeyTemplate))
 			rv = CKR_DEVICE_ERROR;
 
+	if (!rv)
+	{
+		*phPublicKey = pubHandle;
+		*phPrivateKey = privHandle;
+	}
+
 	if (bio) BIO_free_all(bio);
 	if (rsa) RSA_free(rsa);
 	if (pubPEM) delete [] pubPEM;
@@ -945,7 +951,7 @@ bool token::saveObject(const unsigned char* data, const int len, CK_SESSION_HAND
 	return rc == SQLITE_DONE;
 }
 
-bool token::hasSecretKeyByHandle(CK_OBJECT_HANDLE hKey)
+bool token::hasObjectByHandle(CK_OBJECT_HANDLE hKey)
 {
 	int rc = SQLITE_OK;
 	sqlite3_stmt *stmt = NULL;
@@ -1049,7 +1055,7 @@ bool token::getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_T
 	if (!rc)
 		rc = sqlite3_bind_int(stmt, 1, hKey);
 	if (!rc)
-		rc = sqlite3_bind_int(stmt, 1, attrType);
+		rc = sqlite3_bind_int(stmt, 2, attrType);
 	if (!rc)
 		rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW)
@@ -1065,7 +1071,7 @@ bool token::getObjectAttributeDataByHandle(CK_OBJECT_HANDLE hKey, CK_ATTRIBUTE_T
 	return rc == SQLITE_ROW;
 }
 
-bool token::createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate)
+bool token::createObject(CK_SESSION_HANDLE session, std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* pTemplate, CK_OBJECT_HANDLE_PTR phObject)
 {
 	bool rv = false;
 	unsigned long handle = getNextObjectHandle();
@@ -1221,4 +1227,199 @@ bool token::findObjects(CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount, CK_OBJECT_
 	delete [] AND;
 
 	return true;
+}
+
+bool token::getObjectSize(CK_OBJECT_HANDLE handle, unsigned long* size)
+{
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+
+	rc = sqlite3_prepare_v2(db, "select length(data) from objects where handle=?", -1, &stmt, NULL);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, handle);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW)
+		*size = sqlite3_column_int(stmt, 0);
+	sqlite3_finalize(stmt);
+
+	return rc == SQLITE_ROW;
+}
+
+CK_RV token::getAttributeValues(CK_OBJECT_HANDLE handle, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG count)
+{
+	CK_RV rv = CKR_OK;
+	int rc = SQLITE_OK;
+	unsigned int length = 0;
+	sqlite3_stmt *stmt = NULL;
+	std::string query = "select data from objectAttributes where handle=? and type=?";
+
+	for (unsigned int i = 0; i < count && !rc; i++)
+	{
+		rc = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, NULL);
+		if (!rc)
+			rc = sqlite3_bind_int(stmt, 1, handle);
+		if (!rc)
+			rc = sqlite3_bind_int(stmt, 2, pTemplate[i].type);
+		if (!rc)
+			rc = sqlite3_step(stmt);
+		if (rc == SQLITE_ROW)
+		{
+			length = sqlite3_column_bytes(stmt, 0);
+
+			if (length > pTemplate[i].ulValueLen) // Allocation is not long enough
+			{
+				pTemplate[i].ulValueLen = length;
+				if (pTemplate[i].pValue) // if they just wanted the length anyway
+					rv = rv == CKR_OK ? CKR_BUFFER_TOO_SMALL : rv;
+			} else
+			{
+				memcpy(pTemplate[i].pValue, sqlite3_column_blob(stmt, 0), length);
+			}
+			rc = SQLITE_OK;
+		} else if (rc == SQLITE_DONE) // no rows found
+		{
+			rv = rv == CKR_OK ? CKR_ATTRIBUTE_TYPE_INVALID : rv;
+			rc = SQLITE_OK;
+		} else
+		{
+			rv = CKR_DEVICE_ERROR;
+		}
+
+		sqlite3_finalize(stmt);
+	}
+
+	return rv;
+}
+
+CK_RV token::setAttributeValues(CK_OBJECT_HANDLE handle, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG count, bool isCopyingExisting)
+{
+	CK_RV rv = CKR_OK;
+	int rc = SQLITE_OK;
+	sqlite3_stmt *stmt = NULL;
+	std::string query = "update objectAttributes set data=? where handle=? and type=?";
+
+	for (unsigned int i = 0; i < count; i++)
+	{
+		switch (pTemplate[i].type)
+		{
+			// these three are read only depending on whether we are adjusting an existing 
+			// object or copying an existing and making changes
+		case CKA_TOKEN:
+		case CKA_PRIVATE:
+		case CKA_MODIFIABLE:
+			if (!isCopyingExisting)
+			{
+			case CKA_CLASS:
+			case CKA_CERTIFICATE_TYPE:
+			case CKA_TRUSTED:
+			case CKA_SUBJECT:
+			case CKA_VALUE:
+			case CKA_URL:
+			case CKA_HASH_OF_SUBJECT_PUBLIC_KEY:
+			case CKA_HASH_OF_ISSUER_PUBLIC_KEY:
+			case CKA_JAVA_MIDP_SECURITY_DOMAIN:
+			case CKA_OWNER:
+			case CKA_KEY_TYPE:
+			case CKA_LOCAL:
+			case CKA_KEY_GEN_MECHANISM:
+			case CKA_ALLOWED_MECHANISMS:
+			case CKA_WRAP_TEMPLATE:
+			case CKA_ALWAYS_SENSITIVE:
+			case CKA_NEVER_EXTRACTABLE:
+			case CKA_WRAP_WITH_TRUSTED:
+			case CKA_UNWRAP_TEMPLATE:
+			case CKA_ALWAYS_AUTHENTICATE:
+			case CKA_CHECK_VALUE:
+				rv = rv == CKR_OK ? CKR_ATTRIBUTE_READ_ONLY : rv;
+				continue;
+			}
+			break;
+		}
+
+		rc = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, NULL);
+		if (!rc)
+			rc = sqlite3_bind_blob(stmt, 1, pTemplate[i].pValue, pTemplate[i].ulValueLen, NULL);
+		if (!rc)
+			rc = sqlite3_bind_int(stmt, 2, handle);
+		if (!rc)
+			rc = sqlite3_bind_int(stmt, 3, pTemplate[i].type);
+		if (!rc)
+			rc = sqlite3_step(stmt);
+
+		if (rc != SQLITE_DONE)
+			if (sqlite3_changes(db) == 0)
+				rv = rv == CKR_OK ? CKR_ATTRIBUTE_TYPE_INVALID : rv;
+
+		sqlite3_finalize(stmt);
+	}
+
+	return rv;
+}
+
+CK_RV token::copyObject(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE handle, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG count, CK_OBJECT_HANDLE_PTR newHandle)
+{
+	CK_RV rv = CKR_OK;
+	int rc = SQLITE_OK;
+	bool* tokenObject = NULL;
+	unsigned int len = 0;
+	unsigned int nextHandle = getNextObjectHandle();
+	sqlite3_stmt *stmt = NULL;
+	const char* query = "insert into objects(handle, type, session, data) values (?, (select type from objects where handle=?), ?, (select data from objects where handle=?));"
+			"insert into objectAttributes select ?, type, data from objectAttributes where handle=?;";
+	const char** queryPtr = &query;
+
+	// get whether the object we are copying is a permanent object
+	getObjectAttributeDataByHandle(handle, CKA_TOKEN, (void**) &tokenObject, &len);
+
+	// are we changing it's permanence?
+	for (unsigned int i = 0; i < count; i++)
+	{
+		if (pTemplate[i].type == CKA_TOKEN)
+		{
+			memcpy(tokenObject, pTemplate[i].pValue, pTemplate[i].ulValueLen);
+			break;
+		}
+	}
+
+	rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, nextHandle);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 2, handle);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 3, *tokenObject ? 0 : session);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 4, handle);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+		rc = SQLITE_OK;
+	sqlite3_finalize(stmt);
+
+	if (!rc)
+		rc = sqlite3_prepare_v2(db, *queryPtr, -1, &stmt, queryPtr);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 1, nextHandle);
+	if (!rc)
+		rc = sqlite3_bind_int(stmt, 2, handle);
+	if (!rc)
+		rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE)
+		rc = SQLITE_OK;
+	sqlite3_finalize(stmt);
+
+	if (rc)
+		rv = CKR_DEVICE_ERROR;
+
+	if (!rv)
+		rv = setAttributeValues(nextHandle, pTemplate, count, true);
+	if (rv)
+		destroyObject(nextHandle);
+	else
+		*newHandle = nextHandle;
+
+	if (tokenObject) delete [] tokenObject;
+
+	return rv;
 }

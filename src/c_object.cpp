@@ -135,7 +135,7 @@ CK_RV C_CreateObject(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_
 
 	if (!rv)
 	{
-		if (!(*slots)[slot]->createObject(hSession, defaultTemplate))
+		if (!(*slots)[slot]->createObject(hSession, defaultTemplate, phObject))
 			rv = CKR_DEVICE_ERROR;
 	}
 
@@ -161,8 +161,24 @@ CK_RV C_CopyObject(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject, CK_ATTR
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	int slot = getSlotBySession(hSession);
+	CK_STATE state = (*slots)[slot]->getTokenState();
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && !(state == CKS_RO_USER_FUNCTIONS || state == CKS_RW_USER_FUNCTIONS))
+		rv = CKR_USER_NOT_LOGGED_IN;
+	if (!rv && (state == CKS_RO_USER_FUNCTIONS || state == CKS_RO_PUBLIC_SESSION))
+		rv = CKR_SESSION_READ_ONLY;
+	if (!rv && ((!pTemplate && ulCount > 0) || !phNewObject))
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && !(*slots)[slot]->tokenHasObjectByHandle(hObject))
+		rv = CKR_OBJECT_HANDLE_INVALID;
+
+	if (!rv)
+		rv = (*slots)[slot]->copyObject(hSession, hObject, pTemplate, ulCount, phNewObject);
 
 	LOG_RETURNCODE(rv);
 
@@ -186,7 +202,8 @@ CK_RV C_DestroyObject(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject)
 		rv = CKR_SESSION_READ_ONLY;
 	if (!rv && !(state == CKS_RO_USER_FUNCTIONS || state == CKS_RW_USER_FUNCTIONS))
 		rv = CKR_USER_NOT_LOGGED_IN;
-
+	if (!rv && !(*slots)[slot]->tokenHasObjectByHandle(hObject))
+		rv = CKR_OBJECT_HANDLE_INVALID;
 	if (!rv)
 		if (!(*slots)[slot]->destroyObject(hObject))
 			rv = CKR_DEVICE_ERROR;
@@ -202,8 +219,20 @@ CK_RV C_GetObjectSize(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject, CK_U
 	LOG_FUNCTIONCALL();
 
 	CK_RV rv = CKR_OK;
+	int slot = getSlotBySession(hSession);
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && !pulSize)
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && !(*slots)[slot]->tokenHasObjectByHandle(hObject))
+		rv = CKR_OBJECT_HANDLE_INVALID;
+
+	if (!rv)
+		if (!(*slots)[slot]->getObjectSize(hObject, pulSize))
+			rv = CKR_DEVICE_ERROR;
 
 	LOG_RETURNCODE(rv);
 
@@ -217,7 +246,19 @@ CK_RV C_GetAttributeValue(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject, 
 
 	CK_RV rv = CKR_OK;
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	int slot = getSlotBySession(hSession);
+
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && !pTemplate)
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && !(*slots)[slot]->tokenHasObjectByHandle(hObject))
+		rv = CKR_OBJECT_HANDLE_INVALID;
+
+	if (!rv)
+		rv = (*slots)[slot]->getAttributeValues(hObject, pTemplate, ulCount);
 
 	LOG_RETURNCODE(rv);
 
@@ -231,12 +272,36 @@ CK_RV C_SetAttributeValue(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject, 
 
 	CK_RV rv = CKR_OK;
 
-	rv = CKR_FUNCTION_NOT_SUPPORTED;
+	int slot = getSlotBySession(hSession);
+	CK_STATE state = (*slots)[slot]->getTokenState();
+	unsigned char* modifiable = NULL;
+	unsigned int buffLen = 0;
+
+	if (!rv && !cryptokiInitialized)
+		rv = CKR_CRYPTOKI_NOT_INITIALIZED;
+	if (!rv && slot == -1)
+		rv = CKR_SESSION_HANDLE_INVALID;
+	if (!rv && !(state == CKS_RO_USER_FUNCTIONS || state == CKS_RW_USER_FUNCTIONS))
+		rv = CKR_USER_NOT_LOGGED_IN;
+	if (!rv && (state == CKS_RO_USER_FUNCTIONS || state == CKS_RO_PUBLIC_SESSION))
+		rv = CKR_SESSION_READ_ONLY;
+	if (!rv && !pTemplate && ulCount > 0)
+		rv = CKR_ARGUMENTS_BAD;
+	if (!rv && !(*slots)[slot]->tokenHasObjectByHandle(hObject))
+		rv = CKR_OBJECT_HANDLE_INVALID;
+	if (!rv && (*slots)[slot]->getObjectAttributeData(hObject, CKA_MODIFIABLE, (void**) &modifiable, &buffLen) && *(CK_BBOOL*) modifiable == false)
+		rv = CKR_ATTRIBUTE_READ_ONLY;
+	if (!rv)
+		rv = (*slots)[slot]->setAttributeValues(hObject, pTemplate, ulCount, false);
+
+	if (modifiable) delete [] modifiable;
 
 	LOG_RETURNCODE(rv);
 
 	return rv;
 }
+
+// <editor-fold defaultstate="collapsed" desc="Find Objects">
 
 CK_RV C_FindObjectsInit(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG ulCount)
 {
@@ -252,6 +317,8 @@ CK_RV C_FindObjectsInit(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate, 
 		rv = CKR_SESSION_HANDLE_INVALID;
 	if (!rv && findResults)
 		rv = CKR_OPERATION_ACTIVE;
+	if (!rv && ulCount > 0 && !pTemplate)
+		rv = CKR_ARGUMENTS_BAD;
 
 	if (!rv)
 		if (!(*slots)[slot]->findObjects(pTemplate, ulCount, &findResults, &resultLen))
@@ -332,6 +399,9 @@ CK_RV C_FindObjectsFinal(CK_SESSION_HANDLE hSession)
 
 	return rv;
 }
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc="Templating">
 
 static void generateDefaultDataTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* defaultTemplate)
 {
@@ -2049,3 +2119,4 @@ static CK_RV applySecKeyTemplate(std::map<CK_ATTRIBUTE_TYPE, CK_ATTRIBUTE_PTR>* 
 
 	return rv;
 }
+// </editor-fold>

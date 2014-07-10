@@ -91,7 +91,7 @@ CK_RV C_GenerateKey(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism, CK_
 
 		delete defaultTemplate;
 	}
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
@@ -140,7 +140,7 @@ CK_RV C_GenerateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
 		if (!defaultPrivTemplate)
 			rv = CKR_DEVICE_MEMORY;
 	}
-	
+
 	// create and apply the templates
 	if (!rv)
 	{
@@ -152,10 +152,10 @@ CK_RV C_GenerateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
 		generateDefaultPrivKeyTemplate(defaultPrivTemplate);
 		rv = applyPrivKeyTemplate(defaultPrivTemplate, pPrivateKeyTemplate, ulPrivateKeyAttributeCount);
 	}
-	
+
 	if (!rv)
 		rv = (*slots)[slot]->generateKeyPair(hSession, defaultPubTemplate, defaultPrivTemplate, phPublicKey, phPrivateKey);
-	
+
 	// clean up
 	delete pMechInfo;
 	if (defaultPubTemplate)
@@ -178,7 +178,7 @@ CK_RV C_GenerateKeyPair(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
 
 		delete defaultPrivTemplate;
 	}
-	
+
 	LOG_RETURNCODE(rv);
 
 	return rv;
