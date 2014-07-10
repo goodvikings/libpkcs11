@@ -1372,7 +1372,7 @@ CK_RV token::copyObject(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE handle, CK_A
 	// get whether the object we are copying is a permanent object
 	getObjectAttributeDataByHandle(handle, CKA_TOKEN, (void**) &tokenObject, &len);
 
-	// are we changing it's permanence?
+	// are we changing its permanence?
 	for (unsigned int i = 0; i < count; i++)
 	{
 		if (pTemplate[i].type == CKA_TOKEN)
